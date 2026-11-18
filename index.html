@@ -39,6 +39,9 @@
     <span class="wf-tooltip">Falar no WhatsApp</span>
   </a>
 
+  <!-- ── OVERLAY MENU MOBILE ── -->
+  <div class="nav-overlay" id="nav-overlay" aria-hidden="true"></div>
+
   <!-- ── HEADER ── -->
   <header id="header">
     <div class="container header-inner">
@@ -48,6 +51,7 @@
       <nav class="nav" id="nav">
         <a href="#servicos">Serviços</a>
         <a href="#sobre">Sobre</a>
+        <a href="#processo">Como trabalhamos</a>
         <a href="#projetos">Projetos</a>
         <a href="#contato">Contato</a>
       </nav>
@@ -156,13 +160,67 @@
     </div>
   </section>
 
+  <!-- ── COMO TRABALHAMOS ── -->
+  <section id="processo">
+    <div class="container">
+      <div class="processo-header">
+        <span class="section-label">Como trabalhamos / 02</span>
+        <h2 class="section-title">Do briefing à<br/><span class="highlight">entrega final.</span></h2>
+        <p class="processo-subtitle">Um processo claro e transparente, do início ao fim.</p>
+      </div>
+
+      <div class="processo-steps">
+
+        <div class="processo-step">
+          <div class="processo-connector" aria-hidden="true"></div>
+          <div class="processo-num">01</div>
+          <div class="processo-icon">
+            <svg viewBox="0 0 48 48" fill="none"><path d="M8 14h32M8 24h20M8 34h14" stroke="#4F8EF7" stroke-width="2.5" stroke-linecap="round"/><circle cx="38" cy="34" r="6" stroke="#4F8EF7" stroke-width="2.5"/><path d="M36 34l1.5 1.5L40 32" stroke="#4F8EF7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="processo-step-title">Planejamento</h3>
+          <p class="processo-step-desc">Entendemos as necessidades do negócio, o público-alvo e os objetivos do projeto.</p>
+        </div>
+
+        <div class="processo-step">
+          <div class="processo-connector" aria-hidden="true"></div>
+          <div class="processo-num">02</div>
+          <div class="processo-icon">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="28" height="20" rx="3" stroke="#4F8EF7" stroke-width="2.5"/><path d="M12 20h16M12 25h10" stroke="#4F8EF7" stroke-width="2" stroke-linecap="round"/><path d="M38 22v14a3 3 0 01-3 3H16" stroke="#4F8EF7" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="processo-step-title">Desenvolvimento</h3>
+          <p class="processo-step-desc">Criamos a solução com design e código de alto nível, seguindo o planejamento aprovado.</p>
+        </div>
+
+        <div class="processo-step">
+          <div class="processo-connector" aria-hidden="true"></div>
+          <div class="processo-num">03</div>
+          <div class="processo-icon">
+            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="16" stroke="#4F8EF7" stroke-width="2.5"/><path d="M17 24l5 5 9-9" stroke="#4F8EF7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="processo-step-title">Aprovação</h3>
+          <p class="processo-step-desc">O cliente avalia o resultado e solicita ajustes. Refinamos até a aprovação total.</p>
+        </div>
+
+        <div class="processo-step">
+          <div class="processo-num">04</div>
+          <div class="processo-icon">
+            <svg viewBox="0 0 48 48" fill="none"><path d="M6 36l10-10 8 8 10-14 8 8" stroke="#4F8EF7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M40 12h6v6" stroke="#4F8EF7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="processo-step-title">Entrega</h3>
+          <p class="processo-step-desc">Publicamos o projeto e oferecemos suporte contínuo conforme o plano contratado.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- ── PROJETOS ── -->
   <section id="projetos">
     <div class="container">
 
       <div class="projetos-header">
         <div>
-          <div class="section-label">Em destaque / 03</div>
+          <div class="section-label">Em destaque / 04</div>
           <h2 class="section-title">Ideias que ganham<br/><span class="text-muted-title">forma digital.</span></h2>
         </div>
         <div class="projetos-header-right">
@@ -233,7 +291,7 @@
   <!-- ── CTA BANNER ── -->
   <section id="cta-banner">
     <div class="container cta-banner-inner">
-      <div class="section-label">Seu próximo passo / 04</div>
+      <div class="section-label">Seu próximo passo / 05</div>
       <h2 class="cta-banner-title">Vamos tirar sua<br/>ideia <span class="highlight">do papel?</span></h2>
       <p class="cta-banner-sub">Conte um pouco sobre o que sua empresa precisa. Vamos conversar e encontrar o melhor caminho para seu projeto.</p>
       <a href="https://wa.me/5538992193008?text=Olá%2C%20vim%20pelo%20site%20da%20Vortek%20e%20quero%20tirar%20minha%20ideia%20do%20papel!" target="_blank" class="btn btn-primary cta-banner-btn">
@@ -285,11 +343,12 @@
         </div>
         <div class="form-group">
           <label for="mensagem">Mensagem</label>
-          <textarea id="mensagem" name="mensagem" rows="4" placeholder="Conta um pouco sobre o seu projeto..."></textarea>
+          <textarea id="mensagem" name="mensagem" rows="4" placeholder="Conta um pouco sobre o seu projeto..." maxlength="500"></textarea>
+          <span class="char-counter" id="char-counter" aria-live="polite">0/500</span>
         </div>
-        <button type="submit" class="btn btn-primary full-width">
+        <button type="submit" class="btn btn-primary full-width" id="submit-btn">
           <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          Enviar pelo WhatsApp
+          <span id="submit-btn-text">Enviar pelo WhatsApp</span>
         </button>
         <p class="form-note">Você será redirecionado para o WhatsApp com sua mensagem pronta.</p>
       </form>
@@ -329,13 +388,14 @@
           <a href="#sobre">Sobre a Vortek</a>
           <a href="#projetos">Portfólio</a>
           <a href="#contato">Contato</a>
+          <a href="privacidade.html">Política de Privacidade</a>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
       <div class="container">
         <p>© 2025 Vortek. Todos os direitos reservados.</p>
-        <p>Tecnologia que transforma negócios.</p>
+        <p><a href="privacidade.html" class="footer-privacy-link">Política de Privacidade</a> · Tecnologia que transforma negócios.</p>
       </div>
     </div>
   </footer>

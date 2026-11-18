@@ -19,6 +19,7 @@ window.addEventListener('scroll', () => {
 ═══════════════════════════════════════════ */
 const hamburger = document.getElementById('hamburger');
 const nav       = document.getElementById('nav');
+const navOverlay = document.getElementById('nav-overlay');
 
 function openMenu() {
   nav.classList.add('open');
@@ -26,6 +27,10 @@ function openMenu() {
   hamburger.setAttribute('aria-label', 'Fechar menu');
   hamburger.classList.add('active');
   document.body.style.overflow = 'hidden';
+  if (navOverlay) {
+    navOverlay.classList.add('active');
+    navOverlay.setAttribute('aria-hidden', 'false');
+  }
 }
 
 function closeMenu() {
@@ -34,6 +39,10 @@ function closeMenu() {
   hamburger.setAttribute('aria-label', 'Abrir menu');
   hamburger.classList.remove('active');
   document.body.style.overflow = '';
+  if (navOverlay) {
+    navOverlay.classList.remove('active');
+    navOverlay.setAttribute('aria-hidden', 'true');
+  }
 }
 
 hamburger.setAttribute('aria-expanded', 'false');
@@ -62,27 +71,42 @@ document.addEventListener('click', (e) => {
   }
 });
 
+/* Fecha ao clicar no overlay */
+if (navOverlay) {
+  navOverlay.addEventListener('click', closeMenu);
+}
+
 /* ═══════════════════════════════════════════
    SCROLL REVEAL — com suporte a reduced motion
 ═══════════════════════════════════════════ */
 if (!prefersReducedMotion) {
   const revealEls = document.querySelectorAll(
     '#servicos .service-card, ' +
-    '#projetos .projeto-showcase, #projetos .proximo-card, ' +
-    '#contato .contato-text, #contato .contato-form, ' +
-    '#cta-banner .cta-banner-inner'
+    '#processo .processo-step, ' +
+    '#projetos .projeto-showcase, ' +
+    '#projetos .proximo-card, ' +
+    '#cta-banner .cta-banner-inner, ' +
+    '#contato .contato-text, ' +
+    '#contato .contato-form'
   );
 
   revealEls.forEach(el => el.classList.add('reveal'));
 
   const revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry, i) => {
+    entries.forEach((entry) => {
       if (entry.isIntersecting) {
-        setTimeout(() => entry.target.classList.add('visible'), i * 80);
-        revealObserver.unobserve(entry.target);
+        const siblings = Array.from(
+          entry.target.parentElement.querySelectorAll('.reveal')
+        );
+        const idx = siblings.indexOf(entry.target);
+        const delay = idx >= 0 ? idx * 110 : 0;
+        setTimeout(() => entry.target.classList.add('visible'), delay);
+      } else {
+        /* Remove a classe quando sai da tela — anima de novo ao rolar de volta */
+        entry.target.classList.remove('visible');
       }
     });
-  }, { threshold: 0.1 });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
 
   revealEls.forEach(el => revealObserver.observe(el));
 }
@@ -121,21 +145,25 @@ form.addEventListener('submit', (e) => {
   const url = `https://wa.me/5538992193008?text=${encodeURIComponent(texto)}`;
 
   const btn = form.querySelector('button[type="submit"]');
-  const original = btn.innerHTML;
+  const btnText = document.getElementById('submit-btn-text');
+  const originalText = btnText ? btnText.textContent : 'Enviar pelo WhatsApp';
 
-  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0 1 10 10"/></svg> Abrindo WhatsApp...`;
+  if (btnText) btnText.textContent = 'Abrindo WhatsApp...';
   btn.style.background = '#1a9e5c';
   btn.disabled = true;
 
   setTimeout(() => {
     window.open(url, '_blank');
-    btn.innerHTML = '✓ Mensagem enviada!';
+    if (btnText) btnText.textContent = '✓ Mensagem enviada!';
     setTimeout(() => {
-      btn.innerHTML = original;
+      if (btnText) btnText.textContent = originalText;
       btn.style.background = '';
       btn.disabled = false;
       form.reset();
       clearFieldErrors();
+      /* Reset char counter */
+      const counter = document.getElementById('char-counter');
+      if (counter) { counter.textContent = '0/500'; counter.className = 'char-counter'; }
     }, 2500);
   }, 600);
 });
@@ -173,6 +201,164 @@ function clearFieldErrors() {
   document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
   document.querySelectorAll('.field-error-msg').forEach(el => el.remove());
 }
+
+/* ═══════════════════════════════════════════
+   FORMULÁRIO — máscara de telefone
+═══════════════════════════════════════════ */
+const telefoneInput = document.getElementById('telefone');
+if (telefoneInput) {
+  telefoneInput.addEventListener('input', function () {
+    let v = this.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 10) {
+      v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+    } else if (v.length > 6) {
+      v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    } else if (v.length > 2) {
+      v = v.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+    } else if (v.length > 0) {
+      v = v.replace(/^(\d{0,2})/, '($1');
+    }
+    this.value = v;
+  });
+}
+
+/* ═══════════════════════════════════════════
+   FORMULÁRIO — contador de caracteres
+═══════════════════════════════════════════ */
+const mensagemTextarea = document.getElementById('mensagem');
+const charCounter      = document.getElementById('char-counter');
+const MAX_CHARS        = 500;
+
+if (mensagemTextarea && charCounter) {
+  mensagemTextarea.addEventListener('input', function () {
+    const len = this.value.length;
+    charCounter.textContent = `${len}/${MAX_CHARS}`;
+    charCounter.className = 'char-counter';
+    if (len >= MAX_CHARS)         charCounter.classList.add('at-limit');
+    else if (len >= MAX_CHARS * 0.8) charCounter.classList.add('near-limit');
+  });
+}
+
+/* ═══════════════════════════════════════════
+   FORMULÁRIO — label do botão com nome
+═══════════════════════════════════════════ */
+const nomeInput   = document.getElementById('nome');
+const submitBtnText = document.getElementById('submit-btn-text');
+
+if (nomeInput && submitBtnText) {
+  nomeInput.addEventListener('input', function () {
+    const nome = this.value.trim();
+    submitBtnText.textContent = nome.length >= 2
+      ? `Enviar mensagem, ${nome.split(' ')[0]}`
+      : 'Enviar pelo WhatsApp';
+  });
+}
+
+/* ═══════════════════════════════════════════
+   CALCULADORA DE ORÇAMENTO
+═══════════════════════════════════════════ */
+(function () {
+  const cards       = document.querySelectorAll('.orcamento-card');
+  const emptyEl     = document.getElementById('orcamento-empty');
+  const contentEl   = document.getElementById('orcamento-content');
+  const itensEl     = document.getElementById('orcamento-itens');
+  const totalEl     = document.getElementById('orcamento-total');
+  const whatsappBtn = document.getElementById('orcamento-whatsapp-btn');
+  const notaEl      = document.querySelector('.orcamento-nota');
+
+  if (!cards.length || !emptyEl || !contentEl) return;
+
+  const selected = new Map(); /* servico → valor */
+
+  function fmt(val) {
+    return 'R$ ' + val.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
+  }
+
+  function update() {
+    if (selected.size === 0) {
+      emptyEl.hidden  = false;
+      contentEl.hidden = true;
+      whatsappBtn.disabled = true;
+      whatsappBtn.classList.remove('enabled');
+      if (notaEl) { notaEl.classList.remove('hidden'); }
+      return;
+    }
+
+    emptyEl.hidden  = true;
+    contentEl.hidden = false;
+
+    /* Monta itens */
+    itensEl.innerHTML = '';
+    let total = 0;
+    selected.forEach((valor, servico) => {
+      total += valor;
+      const row = document.createElement('div');
+      row.className = 'orcamento-item';
+      row.innerHTML = `<span>${servico}</span><span>${fmt(valor)}</span>`;
+      itensEl.appendChild(row);
+    });
+
+    totalEl.textContent = fmt(total);
+
+    whatsappBtn.disabled = false;
+    whatsappBtn.classList.add('enabled');
+    if (notaEl) notaEl.classList.add('hidden');
+  }
+
+  function toggleCard(card) {
+    const servico = card.dataset.servico;
+    const valor   = parseInt(card.dataset.valor, 10);
+
+    if (selected.has(servico)) {
+      selected.delete(servico);
+      card.classList.remove('selected');
+      card.setAttribute('aria-checked', 'false');
+    } else {
+      selected.set(servico, valor);
+      card.classList.add('selected');
+      card.setAttribute('aria-checked', 'true');
+    }
+    update();
+  }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => toggleCard(card));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        toggleCard(card);
+      }
+    });
+  });
+
+  /* Botão WhatsApp */
+  if (whatsappBtn) {
+    whatsappBtn.addEventListener('click', () => {
+      if (selected.size === 0) return;
+
+      let total = 0;
+      let linhas = '';
+      selected.forEach((valor, servico) => {
+        total += valor;
+        linhas += `  • ${servico} — a partir de ${fmt(valor)}\n`;
+      });
+
+      const msg =
+`Olá, vim pelo site da Vortek! 👋
+
+━━━━━━━━━━━━━━━━━━
+💰 *SOLICITAÇÃO DE ORÇAMENTO*
+━━━━━━━━━━━━━━━━━━
+Serviços de interesse:
+${linhas}
+📊 *Estimativa total:* a partir de ${fmt(total)}
+━━━━━━━━━━━━━━━━━━
+Gostaria de mais informações!`;
+
+      window.open(`https://wa.me/5538992193008?text=${encodeURIComponent(msg)}`, '_blank');
+    });
+  }
+})();
 
 /* ═══════════════════════════════════════════
    WAVE CANVAS — Sobre section

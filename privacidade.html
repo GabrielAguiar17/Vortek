@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de Privacidade — Vortek</title>
+  <meta name="description" content="Política de Privacidade da Vortek Agência Digital. Saiba como coletamos, usamos e protegemos seus dados pessoais conforme a LGPD." />
+  <meta name="robots" content="noindex, follow" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* Estilos específicos da página de privacidade */
+    .privacidade-hero {
+      padding: 160px 0 80px;
+      background: var(--bg2);
+      position: relative;
+    }
+    .privacidade-hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(79,142,247,0.2), transparent);
+    }
+
+    .privacidade-content {
+      padding: 80px 0 120px;
+      background: var(--bg);
+    }
+
+    .privacidade-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+
+    .privacidade-nav {
+      position: sticky;
+      top: 100px;
+    }
+
+    .privacidade-nav h4 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .privacidade-nav ul {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .privacidade-nav a {
+      font-size: 0.85rem;
+      color: rgba(122,144,184,0.65);
+      padding: 6px 10px;
+      border-radius: 6px;
+      border-left: 2px solid transparent;
+      display: block;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    .privacidade-nav a:hover {
+      color: var(--white);
+      border-left-color: var(--blue);
+      background: rgba(79,142,247,0.05);
+    }
+
+    .privacidade-article {
+      max-width: 720px;
+    }
+
+    .privacidade-article .update-date {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 48px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: inline-block;
+    }
+
+    .privacidade-section {
+      margin-bottom: 56px;
+      scroll-margin-top: 100px;
+    }
+
+    .privacidade-section h2 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .priv-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px; height: 28px;
+      background: rgba(79,142,247,0.1);
+      border: 1px solid rgba(79,142,247,0.2);
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+
+    .privacidade-section p {
+      font-size: 0.925rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+      margin-bottom: 14px;
+    }
+
+    .privacidade-section ul,
+    .privacidade-section ol {
+      padding-left: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .privacidade-section li {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      padding-left: 20px;
+      position: relative;
+    }
+    .privacidade-section ul li::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 10px;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--blue);
+      opacity: 0.6;
+    }
+    .privacidade-section ol {
+      counter-reset: priv-ol;
+    }
+    .privacidade-section ol li {
+      counter-increment: priv-ol;
+    }
+    .privacidade-section ol li::before {
+      content: counter(priv-ol) ".";
+      position: absolute;
+      left: 0;
+      color: var(--blue);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .privacidade-section strong {
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .privacidade-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 56px 0;
+    }
+
+    .priv-highlight-box {
+      background: rgba(79,142,247,0.05);
+      border: 1px solid rgba(79,142,247,0.15);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .priv-highlight-box p {
+      margin: 0;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    .priv-highlight-box strong { color: var(--blue); }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--blue);
+      margin-bottom: 36px;
+      transition: opacity 0.2s, gap 0.2s;
+    }
+    .back-link svg { width: 16px; height: 16px; transition: transform 0.2s; }
+    .back-link:hover { opacity: 0.75; gap: 12px; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    @media (max-width: 768px) {
+      .privacidade-layout {
+        grid-template-columns: 1fr;
+      }
+      .privacidade-nav {
+        position: static;
+        display: none;
+      }
+      .privacidade-hero {
+        padding: 130px 0 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── WHATSAPP FLUTUANTE ── -->
+  <a href="https://wa.me/5538992193008?text=Olá%2C%20vim%20pelo%20site%20da%20Vortek!%20Gostaria%20de%20saber%20mais."
+     target="_blank" class="whatsapp-float" aria-label="Falar no WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+    <span class="wf-tooltip">Falar no WhatsApp</span>
+  </a>
+
+  <!-- ── HEADER ── -->
+  <header id="header" class="scrolled">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <img src="logo.svg" alt="Vortek Agência Digital" class="logo-img" />
+      </a>
+      <nav class="nav" id="nav" aria-label="Menu principal">
+        <a href="index.html#servicos">Serviços</a>
+        <a href="index.html#sobre">Sobre</a>
+        <a href="index.html#processo">Como trabalhamos</a>
+        <a href="index.html#projetos">Projetos</a>
+        <a href="index.html#contato">Contato</a>
+      </nav>
+      <a href="index.html#contato" class="btn btn-outline header-cta">Solicitar Orçamento</a>
+      <button class="hamburger" id="hamburger" aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── HERO DA PÁGINA ── -->
+  <section class="privacidade-hero">
+    <div class="container">
+      <span class="section-label">Legal / Privacidade</span>
+      <h1 class="section-title">Política de <span class="highlight">Privacidade</span></h1>
+      <p style="font-size:0.95rem;color:var(--text-muted);max-width:520px;line-height:1.75;margin-top:8px;">
+        Transparência sobre como coletamos, usamos e protegemos suas informações pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei n.º 13.709/2018).
+      </p>
+    </div>
+  </section>
+
+  <!-- ── CONTEÚDO ── -->
+  <main class="privacidade-content">
+    <div class="container">
+
+      <a href="index.html" class="back-link">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M16 10H4M9 5l-5 5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Voltar ao site
+      </a>
+
+      <div class="privacidade-layout">
+
+        <!-- Sumário lateral -->
+        <aside class="privacidade-nav" aria-label="Sumário">
+          <h4>Sumário</h4>
+          <ul>
+            <li><a href="#coleta">1. Coleta de dados</a></li>
+            <li><a href="#uso">2. Uso dos dados</a></li>
+            <li><a href="#cookies">3. Cookies</a></li>
+            <li><a href="#compartilhamento">4. Compartilhamento</a></li>
+            <li><a href="#retencao">5. Retenção</a></li>
+            <li><a href="#seguranca">6. Segurança</a></li>
+            <li><a href="#direitos">7. Direitos do titular</a></li>
+            <li><a href="#menores">8. Menores de idade</a></li>
+            <li><a href="#atualizacoes">9. Atualizações</a></li>
+            <li><a href="#contato-priv">10. Contato (DPO)</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artigo principal -->
+        <article class="privacidade-article">
+
+          <span class="update-date">📅 Última atualização: junho de 2025</span>
+
+          <div class="privacidade-section" id="coleta">
+            <h2><span class="priv-num">01</span> Coleta de dados</h2>
+            <p>A Vortek coleta dados pessoais somente quando você os fornece voluntariamente, seja pelo formulário de contato do site, por mensagens enviadas via WhatsApp ou por e-mail.</p>
+            <p>As informações que podemos coletar incluem:</p>
+            <ul>
+              <li><strong>Dados de identificação:</strong> nome completo.</li>
+              <li><strong>Dados de contato:</strong> número de telefone/WhatsApp e endereço de e-mail.</li>
+              <li><strong>Dados de comunicação:</strong> conteúdo das mensagens enviadas.</li>
+              <li><strong>Dados de navegação:</strong> endereço IP, tipo de navegador, páginas acessadas e tempo de permanência, coletados automaticamente por ferramentas de análise (como Google Analytics), quando ativas.</li>
+            </ul>
+            <p>Não coletamos dados sensíveis (saúde, origem racial, convicções religiosas ou políticas, dados biométricos), nem dados de pagamento — transações financeiras são realizadas em plataformas de terceiros devidamente certificadas.</p>
+          </div>
+
+          <div class="privacidade-section" id="uso">
+            <h2><span class="priv-num">02</span> Uso dos dados</h2>
+            <p>Os dados coletados são utilizados exclusivamente para as finalidades abaixo, com base nas hipóteses legais previstas na LGPD:</p>
+            <ul>
+              <li>Responder às solicitações de contato e orçamento (execução de contrato ou diligências pré-contratuais — art. 7.º, V).</li>
+              <li>Enviar propostas, informações sobre serviços e atualizações relacionadas ao projeto em andamento (legítimo interesse — art. 7.º, IX).</li>
+              <li>Melhorar a experiência de navegação e a qualidade do site (legítimo interesse — art. 7.º, IX).</li>
+              <li>Cumprir obrigações legais ou regulatórias quando exigido (cumprimento de obrigação legal — art. 7.º, II).</li>
+            </ul>
+            <div class="priv-highlight-box">
+              <p>A Vortek <strong>não vende, não aluga e não comercializa</strong> seus dados pessoais com terceiros para fins de marketing.</p>
+            </div>
+          </div>
+
+          <div class="privacidade-section" id="cookies">
+            <h2><span class="priv-num">03</span> Cookies</h2>
+            <p>Cookies são pequenos arquivos de texto armazenados no seu navegador. Este site pode utilizar:</p>
+            <ul>
+              <li><strong>Cookies essenciais:</strong> necessários para o funcionamento básico do site. Não podem ser desativados.</li>
+              <li><strong>Cookies analíticos:</strong> coletam informações agregadas sobre o uso do site (ex.: Google Analytics), sempre de forma anonimizada. Podem ser desativados nas configurações do seu navegador ou por meio de extensões de privacidade.</li>
+              <li><strong>Cookies de preferência:</strong> armazenam configurações locais (ex.: preferência de tema), exclusivamente no seu dispositivo.</li>
+            </ul>
+            <p>Você pode bloquear ou excluir cookies a qualquer momento nas configurações do seu navegador. A desativação de cookies essenciais pode comprometer funcionalidades do site.</p>
+            <p>Para saber mais sobre como gerenciar cookies, consulte a documentação do seu navegador ou visite <a href="https://www.allaboutcookies.org" target="_blank" rel="noopener" style="color:var(--blue)">allaboutcookies.org</a>.</p>
+          </div>
+
+          <div class="privacidade-section" id="compartilhamento">
+            <h2><span class="priv-num">04</span> Compartilhamento de dados</h2>
+            <p>Seus dados pessoais podem ser compartilhados com:</p>
+            <ul>
+              <li><strong>Ferramentas de comunicação:</strong> WhatsApp Business (Meta Platforms) e Gmail (Google LLC), utilizados para retornar o contato.</li>
+              <li><strong>Ferramentas de análise:</strong> Google Analytics (Google LLC), de forma anonimizada.</li>
+              <li><strong>Autoridades públicas:</strong> quando exigido por lei, ordem judicial ou regulamento.</li>
+            </ul>
+            <p>Todos os prestadores de serviço terceirizados utilizados pela Vortek possuem políticas de privacidade próprias e atuam como operadores de dados, processando informações apenas conforme nossas instruções e para as finalidades contratadas.</p>
+            <p>Não realizamos transferências internacionais de dados além das inerentes ao uso das plataformas acima (Google e Meta possuem certificações de adequação ou cláusulas contratuais padrão).</p>
+          </div>
+
+          <div class="privacidade-section" id="retencao">
+            <h2><span class="priv-num">05</span> Retenção de dados</h2>
+            <p>Mantemos seus dados pelo tempo necessário para cumprir as finalidades descritas nesta política ou conforme exigido por lei, aplicando os seguintes critérios:</p>
+            <ul>
+              <li>Dados de contato e mensagens: até 5 anos após o encerramento do relacionamento comercial, para fins de registro e defesa em processos legais.</li>
+              <li>Dados de navegação analíticos: conforme a política de retenção da ferramenta utilizada (padrão: 26 meses no Google Analytics).</li>
+            </ul>
+            <p>Após o prazo de retenção, os dados são eliminados ou anonimizados de forma segura.</p>
+          </div>
+
+          <div class="privacidade-section" id="seguranca">
+            <h2><span class="priv-num">06</span> Segurança</h2>
+            <p>Adotamos medidas técnicas e organizacionais razoáveis para proteger seus dados pessoais contra acesso não autorizado, perda, alteração ou divulgação indevida, incluindo:</p>
+            <ul>
+              <li>Comunicação via HTTPS com certificado TLS.</li>
+              <li>Acesso restrito às informações de contato apenas por colaboradores autorizados da Vortek.</li>
+              <li>Uso de senhas fortes e autenticação de dois fatores nas plataformas utilizadas.</li>
+            </ul>
+            <p>Embora adotemos boas práticas de segurança, nenhum sistema é completamente inviolável. Em caso de incidente que possa afetar seus direitos, notificaremos as pessoas impactadas conforme exigido pela LGPD (art. 48).</p>
+          </div>
+
+          <div class="privacidade-section" id="direitos">
+            <h2><span class="priv-num">07</span> Direitos do titular</h2>
+            <p>Conforme a LGPD (art. 18), você tem os seguintes direitos em relação aos seus dados pessoais:</p>
+            <ol>
+              <li><strong>Confirmação e acesso:</strong> saber se tratamos seus dados e obter uma cópia deles.</li>
+              <li><strong>Correção:</strong> solicitar a atualização de dados incompletos, inexatos ou desatualizados.</li>
+              <li><strong>Anonimização, bloqueio ou eliminação:</strong> de dados desnecessários, excessivos ou tratados em desconformidade com a LGPD.</li>
+              <li><strong>Portabilidade:</strong> receber seus dados em formato estruturado para transferência a outro fornecedor.</li>
+              <li><strong>Eliminação:</strong> solicitar a exclusão dos dados tratados com base no consentimento.</li>
+              <li><strong>Revogação do consentimento:</strong> retirar o consentimento dado a qualquer momento, sem prejuízo dos tratamentos anteriores.</li>
+              <li><strong>Oposição:</strong> opor-se a tratamentos realizados com base em hipóteses legais distintas do consentimento.</li>
+              <li><strong>Informação sobre compartilhamento:</strong> saber com quais entidades públicas ou privadas seus dados são compartilhados.</li>
+            </ol>
+            <p>Para exercer qualquer desses direitos, entre em contato pelos canais indicados na seção 10. Responderemos em até 15 dias úteis.</p>
+          </div>
+
+          <div class="privacidade-section" id="menores">
+            <h2><span class="priv-num">08</span> Menores de idade</h2>
+            <p>Este site é destinado a pessoas jurídicas e pessoas físicas maiores de 18 anos. Não coletamos intencionalmente dados de menores de 18 anos. Se identificarmos que coletamos dados de um menor sem o consentimento do responsável legal, eliminaremos essas informações imediatamente.</p>
+          </div>
+
+          <div class="privacidade-section" id="atualizacoes">
+            <h2><span class="priv-num">09</span> Atualizações desta política</h2>
+            <p>Esta política pode ser atualizada periodicamente para refletir mudanças em nossas práticas, serviços ou exigências legais. A versão mais recente estará sempre disponível nesta página, com a data da última atualização indicada no topo.</p>
+            <p>Recomendamos a leitura periódica deste documento. O uso continuado do site após eventuais alterações implica concordância com a versão atualizada.</p>
+          </div>
+
+          <div class="privacidade-divider"></div>
+
+          <div class="privacidade-section" id="contato-priv">
+            <h2><span class="priv-num">10</span> Contato — Encarregado (DPO)</h2>
+            <p>Para dúvidas, solicitações ou exercício de direitos relacionados a esta política, entre em contato com o responsável pelo tratamento de dados da Vortek:</p>
+            <div class="priv-highlight-box">
+              <p>
+                <strong>Vortek Agência Digital</strong><br/>
+                📧 E-mail: <a href="mailto:contato@vortek.com.br" style="color:var(--blue)">contato@vortek.com.br</a><br/>
+                📱 WhatsApp: <a href="https://wa.me/5538992193008" target="_blank" style="color:var(--blue)">(38) 99219-3008</a><br/>
+                🌐 Site: <a href="index.html" style="color:var(--blue)">vortek.com.br</a>
+              </p>
+            </div>
+            <p>Caso entenda que seus direitos não foram atendidos, você pode registrar reclamação perante a <a href="https://www.gov.br/anpd" target="_blank" rel="noopener" style="color:var(--blue)">Autoridade Nacional de Proteção de Dados (ANPD)</a>.</p>
+          </div>
+
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer id="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <img src="logo.svg" alt="Vortek" class="logo-img" />
+        </a>
+        <p>Tecnologia que transforma negócios.</p>
+        <div class="social-links">
+          <a href="#" aria-label="Instagram" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          </a>
+          <a href="#" aria-label="LinkedIn" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+          <a href="https://wa.me/5538992193008" aria-label="WhatsApp" target="_blank">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Serviços</h4>
+          <a href="index.html#servicos">Sites Profissionais</a>
+          <a href="index.html#servicos">Landing Pages</a>
+          <a href="index.html#servicos">Automações</a>
+        </div>
+        <div class="footer-col">
+          <h4>Empresa</h4>
+          <a href="index.html#sobre">Sobre a Vortek</a>
+          <a href="index.html#projetos">Portfólio</a>
+          <a href="index.html#contato">Contato</a>
+          <a href="privacidade.html">Política de Privacidade</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        <p>© 2025 Vortek. Todos os direitos reservados.</p>
+        <p><a href="privacidade.html" class="footer-privacy-link">Política de Privacidade</a> · Tecnologia que transforma negócios.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* Header scroll */
+    const header = document.getElementById('header');
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 40);
+    }, { passive: true });
+
+    /* Menu mobile */
+    const hamburger = document.getElementById('hamburger');
+    const nav       = document.getElementById('nav');
+
+    function openMenu() {
+      nav.classList.add('open');
+      hamburger.setAttribute('aria-expanded', 'true');
+      hamburger.setAttribute('aria-label', 'Fechar menu');
+      hamburger.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeMenu() {
+      nav.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      hamburger.setAttribute('aria-label', 'Abrir menu');
+      hamburger.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    hamburger.setAttribute('aria-expanded', 'false');
+    hamburger.setAttribute('aria-controls', 'nav');
+
+    hamburger.addEventListener('click', () => {
+      nav.classList.contains('open') ? closeMenu() : openMenu();
+    });
+
+    nav.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && nav.classList.contains('open')) closeMenu();
+    });
+  </script>
+</body>
+</html>
