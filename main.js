@@ -119,6 +119,15 @@ const form = document.getElementById('contato-form');
 form.addEventListener('submit', (e) => {
   e.preventDefault();
 
+  /* Anti-spam */
+  const spamCheck = checkSpam();
+  if (spamCheck === 'bot') return; // ignora silenciosamente
+  if (spamCheck && spamCheck.startsWith('rate:')) {
+    const sec = spamCheck.split(':')[1];
+    showFieldError('nome', `Aguarde ${sec}s antes de enviar novamente.`);
+    return;
+  }
+
   const nome     = document.getElementById('nome').value.trim();
   const telefone = document.getElementById('telefone').value.trim();
   const servico  = document.getElementById('servico').value;
@@ -154,6 +163,7 @@ form.addEventListener('submit', (e) => {
 
   setTimeout(() => {
     window.open(url, '_blank');
+    localStorage.setItem('vortek_last_submit', Date.now().toString());
     if (btnText) btnText.textContent = '✓ Mensagem enviada!';
     setTimeout(() => {
       if (btnText) btnText.textContent = originalText;
@@ -548,6 +558,25 @@ Gostaria de mais informações!`;
   init();
   loop();
 })();
+
+/* ═══════════════════════════════════════════
+   ANTI-SPAM — honeypot + rate limiting
+═══════════════════════════════════════════ */
+const RATE_LIMIT_MS = 60000; // 60 segundos entre envios
+
+function checkSpam() {
+  /* Honeypot — se preenchido é bot */
+  const hp = document.getElementById('hp-field');
+  if (hp && hp.value.trim() !== '') return 'bot';
+
+  /* Rate limiting */
+  const last = localStorage.getItem('vortek_last_submit');
+  if (last && Date.now() - parseInt(last) < RATE_LIMIT_MS) {
+    const remaining = Math.ceil((RATE_LIMIT_MS - (Date.now() - parseInt(last))) / 1000);
+    return `rate:${remaining}`;
+  }
+  return null;
+}
 
 /* ═══════════════════════════════════════════
    ACTIVE NAV LINK — destaca seção atual

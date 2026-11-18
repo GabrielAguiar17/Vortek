@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Página não encontrada — Vortek</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #050810; --blue: #4F8EF7; --blue-glow: rgba(79,142,247,0.25);
+      --text: #e8edf8; --muted: #7a90b8; --white: #fff;
+      --border: rgba(79,142,247,0.12);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 24px;
+      max-width: 560px;
+    }
+    .num {
+      font-size: clamp(6rem, 20vw, 10rem);
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, #fff 30%, var(--blue) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 0 30px rgba(79,142,247,0.3));
+    }
+    h1 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-bottom: 36px;
+      line-height: 1.65;
+    }
+    .actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 28px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--blue);
+      color: var(--white);
+      box-shadow: 0 0 24px var(--blue-glow);
+    }
+    .btn-primary:hover {
+      background: #6aa0ff;
+      transform: translateY(-2px);
+      box-shadow: 0 0 36px rgba(79,142,247,0.45);
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+    .btn-ghost:hover {
+      background: rgba(79,142,247,0.1);
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+    .countdown {
+      font-size: 0.78rem;
+      color: rgba(122,144,184,0.5);
+      letter-spacing: 0.05em;
+    }
+    .countdown span {
+      color: var(--blue);
+      font-weight: 700;
+    }
+    .logo {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+    .logo img { height: 36px; width: auto; }
+  </style>
+</head>
+<body>
+
+  <canvas id="c404"></canvas>
+
+  <a href="index.html" class="logo">
+    <img src="logo.svg" alt="Vortek" />
+  </a>
+
+  <div class="content">
+    <div class="num">404</div>
+    <h1>Página não encontrada</h1>
+    <p>A página que você está procurando não existe ou foi movida. Mas não se preocupe — a Vortek está aqui para ajudar.</p>
+
+    <div class="actions">
+      <a href="index.html" class="btn btn-primary">← Voltar ao início</a>
+      <a href="https://wa.me/5538992193008" target="_blank" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Falar no WhatsApp
+      </a>
+    </div>
+
+    <p class="countdown">Redirecionando em <span id="cd">10</span> segundos...</p>
+  </div>
+
+  <script>
+    /* Countdown e redirect */
+    let s = 10;
+    const el = document.getElementById('cd');
+    const timer = setInterval(() => {
+      s--;
+      el.textContent = s;
+      if (s <= 0) { clearInterval(timer); window.location.href = 'index.html'; }
+    }, 1000);
+
+    /* Partículas */
+    (function(){
+      const cv = document.getElementById('c404');
+      const ctx = cv.getContext('2d');
+      let W, H, pts;
+      const N = 80, BLUE = '79,142,247', CONN = 100;
+      function resize(){ W = cv.width = cv.offsetWidth; H = cv.height = cv.offsetHeight; }
+      function rand(a,b){ return Math.random()*(b-a)+a; }
+      function mkPt(){ return { x:rand(0,W), y:rand(0,H), vx:rand(-0.18,0.18), vy:rand(-0.18,0.18), r:rand(1,2.2), a:rand(0.3,0.8) }; }
+      function init(){ resize(); pts = Array.from({length:N}, mkPt); }
+      function draw(){
+        ctx.clearRect(0,0,W,H);
+        for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
+          const p=pts[i],q=pts[j], dx=p.x-q.x, dy=p.y-q.y, d=Math.hypot(dx,dy);
+          if(d<CONN){ ctx.beginPath(); ctx.strokeStyle=`rgba(${BLUE},${(1-d/CONN)*0.2})`; ctx.lineWidth=0.5; ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke(); }
+        }
+        pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle=`rgba(${BLUE},${p.a})`; ctx.fill(); });
+      }
+      function update(){ pts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; if(p.x<-5)p.x=W+5; if(p.x>W+5)p.x=-5; if(p.y<-5)p.y=H+5; if(p.y>H+5)p.y=-5; }); }
+      function loop(){ update(); draw(); requestAnimationFrame(loop); }
+      window.addEventListener('resize', resize);
+      init(); loop();
+    })();
+  </script>
+</body>
+</html>
