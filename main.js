@@ -579,8 +579,244 @@ function checkSpam() {
 }
 
 /* ═══════════════════════════════════════════
-   ACTIVE NAV LINK — destaca seção atual
+   CANVAS DE FUNDO GLOBAL — partículas e conexões
 ═══════════════════════════════════════════ */
+(function () {
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas || prefersReducedMotion || isMobile) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, pts, mouse = { x: -9999, y: -9999 };
+  const N = 70, CONN = 140, BLUE = '79,142,247';
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  function rand(a, b) { return Math.random() * (b - a) + a; }
+  function mkPt() {
+    return { x: rand(0,W), y: rand(0,H), vx: rand(-0.12,0.12), vy: rand(-0.12,0.12), r: rand(0.8,2), a: rand(0.2,0.6) };
+  }
+  function init() { resize(); pts = Array.from({length:N}, mkPt); }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const p = pts[i], q = pts[j];
+        const d = Math.hypot(p.x - q.x, p.y - q.y);
+        if (d < CONN) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(${BLUE},${(1 - d/CONN) * 0.15})`;
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.stroke();
+        }
+      }
+      ctx.beginPath();
+      ctx.arc(pts[i].x, pts[i].y, pts[i].r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${BLUE},${pts[i].a})`;
+      ctx.fill();
+    }
+  }
+
+  function update() {
+    pts.forEach(p => {
+      /* Leve atração ao mouse */
+      const dx = mouse.x - p.x, dy = mouse.y - p.y;
+      const d  = Math.hypot(dx, dy);
+      if (d < 200 && d > 0) {
+        p.vx += (dx / d) * 0.015;
+        p.vy += (dy / d) * 0.015;
+      }
+      const sp = Math.hypot(p.vx, p.vy);
+      if (sp > 0.5) { p.vx *= 0.95; p.vy *= 0.95; }
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+    });
+  }
+
+  function loop() { update(); draw(); requestAnimationFrame(loop); }
+
+  window.addEventListener('resize', resize, { passive: true });
+  window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+  window.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+  init(); loop();
+})();
+
+/* ═══════════════════════════════════════════
+   ASSISTENTE VIRTUAL
+═══════════════════════════════════════════ */
+(function () {
+  const widget   = document.getElementById('chat-widget');
+  const toggle   = document.getElementById('chat-toggle');
+  const closeBtn = document.getElementById('chat-close-btn');
+  const messages = document.getElementById('chat-messages');
+  const options  = document.getElementById('chat-options');
+  const badge    = document.getElementById('chat-badge');
+  if (!widget) return;
+
+  let opened = false;
+
+  /* ── Árvore de diálogo ── */
+  const FLOWS = {
+    start: {
+      msg: '👋 Olá! Sou o assistente da <strong>Vortek</strong>. Como posso te ajudar hoje?',
+      opts: [
+        { label: '🖥️ Quero um site ou landing page', next: 'site' },
+        { label: '🤖 Quero automatizar processos',   next: 'automacao' },
+        { label: '💰 Quero saber os preços',          next: 'precos' },
+        { label: '📋 Como funciona o processo?',      next: 'processo' },
+        { label: '📞 Falar com a equipe agora',       next: 'contato' },
+      ]
+    },
+    site: {
+      msg: 'Ótimo! Criamos sites institucionais, landing pages de alta conversão e lojas virtuais. Qual tipo de projeto você tem em mente?',
+      opts: [
+        { label: '📄 Landing page',         next: 'orcamento' },
+        { label: '🏢 Site institucional',   next: 'orcamento' },
+        { label: '🛒 Loja virtual',         next: 'orcamento' },
+        { label: '← Voltar',               next: 'start' },
+      ]
+    },
+    automacao: {
+      msg: 'Perfeito! Automatizamos atendimentos, follow-ups, integrações entre ferramentas e fluxos de WhatsApp. O que você quer automatizar?',
+      opts: [
+        { label: '💬 Atendimento e WhatsApp', next: 'orcamento' },
+        { label: '📧 E-mail marketing',       next: 'orcamento' },
+        { label: '🔗 Integração de sistemas', next: 'orcamento' },
+        { label: '← Voltar',                 next: 'start' },
+      ]
+    },
+    precos: {
+      msg: 'Nossos projetos partem de:\n• Landing page: a partir de <strong>R$ 800</strong>\n• Site institucional: a partir de <strong>R$ 1.500</strong>\n• Loja virtual: a partir de <strong>R$ 2.500</strong>\n• Automações: a partir de <strong>R$ 600</strong>\n\nO valor final depende do escopo. Que tal um orçamento personalizado?',
+      opts: [
+        { label: '✅ Quero um orçamento',  next: 'orcamento' },
+        { label: '← Voltar',              next: 'start' },
+      ]
+    },
+    processo: {
+      msg: 'Nosso processo tem 4 etapas:\n1️⃣ <strong>Planejamento</strong> — entendemos seu negócio\n2️⃣ <strong>Desenvolvimento</strong> — criamos a solução\n3️⃣ <strong>Aprovação</strong> — você avalia e ajusta\n4️⃣ <strong>Entrega</strong> — publicamos e oferecemos suporte\n\nTudo transparente, sem surpresas.',
+      opts: [
+        { label: '🚀 Quero começar',  next: 'orcamento' },
+        { label: '← Voltar',         next: 'start' },
+      ]
+    },
+    orcamento: {
+      msg: 'Perfeito! Vou te redirecionar para o WhatsApp da Vortek. Nossa equipe responde em até 1h útil. 😊',
+      opts: [
+        { label: '📲 Abrir WhatsApp agora', next: 'whatsapp' },
+        { label: '📋 Preencher formulário', next: 'formulario' },
+        { label: '← Voltar',               next: 'start' },
+      ]
+    },
+    contato: {
+      msg: 'Você pode falar com a nossa equipe agora mesmo pelo WhatsApp ou preenchendo o formulário no site.',
+      opts: [
+        { label: '📲 WhatsApp: (38) 99219-3008', next: 'whatsapp' },
+        { label: '📋 Ir para o formulário',       next: 'formulario' },
+        { label: '← Voltar',                      next: 'start' },
+      ]
+    },
+    whatsapp: { msg: null, action: 'whatsapp' },
+    formulario: { msg: null, action: 'formulario' },
+  };
+
+  function addMsg(text, type) {
+    const el = document.createElement('div');
+    el.className = `chat-msg ${type}`;
+    el.innerHTML = text.replace(/\n/g, '<br>');
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function showTyping() {
+    const el = document.createElement('div');
+    el.className = 'chat-typing';
+    el.id = 'chat-typing';
+    el.innerHTML = '<span></span><span></span><span></span>';
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+    return el;
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('chat-typing');
+    if (el) el.remove();
+  }
+
+  function renderOptions(opts) {
+    options.innerHTML = '';
+    opts.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'chat-option';
+      btn.textContent = opt.label;
+      btn.addEventListener('click', () => handleOption(opt));
+      options.appendChild(btn);
+    });
+  }
+
+  function handleOption(opt) {
+    addMsg(opt.label, 'user');
+    options.innerHTML = '';
+
+    const flow = FLOWS[opt.next];
+    if (!flow) return;
+
+    /* Ações especiais */
+    if (flow.action === 'whatsapp') {
+      window.open('https://wa.me/5538992193008?text=Olá%2C%20vim%20pelo%20assistente%20do%20site%20da%20Vortek!%20Gostaria%20de%20um%20orçamento.', '_blank');
+      setTimeout(() => {
+        addMsg('Abrindo o WhatsApp... Se não abrir automaticamente, clique no botão flutuante verde. 👇', 'bot');
+        renderOptions(FLOWS.start.opts);
+      }, 400);
+      return;
+    }
+    if (flow.action === 'formulario') {
+      document.querySelector('#contato')?.scrollIntoView({ behavior: 'smooth' });
+      closeChat();
+      return;
+    }
+
+    const typing = showTyping();
+    setTimeout(() => {
+      removeTyping();
+      addMsg(flow.msg, 'bot');
+      renderOptions(flow.opts);
+    }, 700 + Math.random() * 400);
+  }
+
+  function openChat() {
+    opened = true;
+    widget.classList.add('open');
+    badge.classList.add('hidden');
+    if (messages.children.length === 0) {
+      setTimeout(() => {
+        const typing = showTyping();
+        setTimeout(() => {
+          removeTyping();
+          addMsg(FLOWS.start.msg, 'bot');
+          renderOptions(FLOWS.start.opts);
+        }, 900);
+      }, 300);
+    }
+  }
+
+  function closeChat() {
+    opened = false;
+    widget.classList.remove('open');
+  }
+
+  toggle.addEventListener('click', () => opened ? closeChat() : openChat());
+  closeBtn.addEventListener('click', closeChat);
+
+  /* Abre automaticamente após 8s se não aberto ainda */
+  setTimeout(() => {
+    if (!opened) openChat();
+  }, 8000);
+})();
 const sections = document.querySelectorAll('section[id]');
 const navLinks = document.querySelectorAll('.nav a');
 

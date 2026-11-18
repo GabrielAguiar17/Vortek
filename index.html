@@ -42,6 +42,9 @@
 </head>
 <body>
 
+  <!-- ── CANVAS DE FUNDO GLOBAL ── -->
+  <canvas id="bg-canvas"></canvas>
+
   <!-- ── WHATSAPP FLUTUANTE ── -->
   <a href="https://wa.me/5538992193008?text=Olá%2C%20vim%20pelo%20site%20da%20Vortek!%20Gostaria%20de%20saber%20mais." 
      target="_blank" class="whatsapp-float" aria-label="Falar no WhatsApp">
@@ -610,6 +613,34 @@
       </div>
     </div>
   </footer>
+
+  <!-- ── ASSISTENTE VIRTUAL ── -->
+  <div class="chat-widget" id="chat-widget" aria-label="Assistente Vortek">
+    <button class="chat-toggle" id="chat-toggle" aria-label="Abrir assistente">
+      <svg class="chat-icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <svg class="chat-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <span class="chat-badge" id="chat-badge">1</span>
+    </button>
+
+    <div class="chat-box" id="chat-box" aria-live="polite">
+      <div class="chat-header">
+        <div class="chat-avatar">
+          <img src="logo.svg" alt="Vortek" />
+        </div>
+        <div class="chat-header-info">
+          <span class="chat-name">Vortek</span>
+          <span class="chat-status"><span class="chat-dot"></span> Online agora</span>
+        </div>
+        <button class="chat-close-btn" id="chat-close-btn" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="chat-messages" id="chat-messages"></div>
+
+      <div class="chat-options" id="chat-options"></div>
+    </div>
+  </div>
 
   <script src="main.js"></script>
 </body>
