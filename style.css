@@ -146,7 +146,14 @@ img { max-width: 100%; display: block; }
 }
 
 .logo { display: flex; align-items: center; flex-shrink: 0; }
-.logo-img { height: 40px; width: auto; min-width: 170px; display: block; }
+.logo-img {
+  height: 40px;
+  width: auto;
+  max-width: 200px;
+  min-width: unset;
+  display: block;
+  object-fit: contain;
+}
 
 .nav {
   display: flex;
@@ -1010,20 +1017,25 @@ body > footer {
 }
 
 /* Botões flutuantes ficam sempre no topo */
-.whatsapp-float { z-index: 999 !important; }
-.chat-widget    { z-index: 998 !important; }
-.nav-overlay    { z-index: 97  !important; }
+.whatsapp-float,
+.chat-widget,
+.nav-overlay {
+  position: fixed !important;
+  z-index: 999 !important;
+}
 
 /* ═══════════════════════════════════════════
    ASSISTENTE VIRTUAL
 ═══════════════════════════════════════════ */
 .chat-widget {
-  position: relative;
+  position: fixed;
+  bottom: 28px;
+  right: 96px;
+  z-index: 998;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 12px;
-  flex-shrink: 0;
 }
 
 /* Botão toggle */
@@ -1087,6 +1099,7 @@ body > footer {
   display: flex;
   flex-direction: column;
   max-height: 520px;
+  /* Fechado */
   opacity: 0;
   transform: translateY(16px) scale(0.95);
   pointer-events: none;
@@ -1250,16 +1263,12 @@ body > footer {
 }
 
 @media (max-width: 480px) {
-  .float-buttons { bottom: 20px; right: 16px; gap: 10px; }
-  .whatsapp-float { width: 50px; height: 50px; }
-  .whatsapp-float svg { width: 24px; height: 24px; }
-  .chat-toggle { width: 50px !important; height: 50px !important; }
+  .chat-widget { right: 86px; bottom: 20px; }
   .chat-box {
     width: calc(100vw - 24px);
-    position: fixed;
-    right: 12px;
+    right: auto;
     left: 12px;
-    bottom: 80px;
+    bottom: 70px;
     max-height: 75vh;
   }
 }
@@ -1267,20 +1276,8 @@ body > footer {
 .whatsapp-float {
   position: fixed;
   bottom: 28px;
-/* ── Wrapper dos botões flutuantes ── */
-.float-buttons {
-  position: fixed;
-  bottom: 28px;
   right: 28px;
   z-index: 999;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  gap: 12px;
-}
-
-.whatsapp-float {
-  position: relative;
   width: 56px;
   height: 56px;
   background: #25D366;
@@ -1290,7 +1287,6 @@ body > footer {
   justify-content: center;
   box-shadow: 0 4px 20px rgba(37,211,102,0.4);
   transition: transform var(--transition), box-shadow var(--transition);
-  flex-shrink: 0;
 }
 .whatsapp-float svg { width: 28px; height: 28px; color: #fff; }
 .whatsapp-float:hover {
@@ -1299,8 +1295,7 @@ body > footer {
 }
 .wf-tooltip {
   position: absolute;
-  bottom: 68px;
-  right: 0;
+  right: 68px;
   background: rgba(10,18,34,0.95);
   color: #fff;
   font-size: 0.78rem;
@@ -1314,15 +1309,6 @@ body > footer {
   border: 1px solid var(--border);
 }
 .whatsapp-float:hover .wf-tooltip { opacity: 1; }
-
-.chat-widget {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-  flex-shrink: 0;
-}
 
 /* ═══════════════════════════════════════════
    PROJETOS — próximos cards
