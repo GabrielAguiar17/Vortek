@@ -667,7 +667,6 @@ function checkSpam() {
       opts: [
         { label: '🖥️ Quero um site ou landing page', next: 'site' },
         { label: '🤖 Quero automatizar processos',   next: 'automacao' },
-        { label: '💰 Quero saber os preços',          next: 'precos' },
         { label: '📋 Como funciona o processo?',      next: 'processo' },
         { label: '📞 Falar com a equipe agora',       next: 'contato' },
       ]
