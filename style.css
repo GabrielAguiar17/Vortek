@@ -999,9 +999,20 @@ img { max-width: 100%; display: block; }
   opacity: 0.35;
 }
 
-body > *:not(#bg-canvas) {
+/* Garante que seções fiquem acima do canvas mas abaixo dos flutuantes */
+body > section,
+body > header,
+body > footer {
   position: relative;
   z-index: 1;
+}
+
+/* Botões flutuantes ficam sempre no topo */
+.whatsapp-float,
+.chat-widget,
+.nav-overlay {
+  position: fixed !important;
+  z-index: 999 !important;
 }
 
 /* ═══════════════════════════════════════════
