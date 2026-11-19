@@ -996,10 +996,12 @@ img { max-width: 100%; display: block; }
   height: 100%;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.85;
 }
 
-/* Garante que seções fiquem acima do canvas mas abaixo dos flutuantes */
+/* Reduz espaço entre seções */
+#servicos, #processo, #projetos, #cta-banner, #contato { padding: 80px 0; }
+#sobre { padding: 80px 0; }
 body > section,
 body > header,
 body > footer {

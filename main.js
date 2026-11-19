@@ -586,7 +586,7 @@ function checkSpam() {
   if (!canvas || prefersReducedMotion || isMobile) return;
   const ctx = canvas.getContext('2d');
   let W, H, pts, mouse = { x: -9999, y: -9999 };
-  const N = 70, CONN = 140, BLUE = '79,142,247';
+  const N = 120, CONN = 160, BLUE = '79,142,247';
 
   function resize() {
     W = canvas.width  = window.innerWidth;
@@ -594,7 +594,7 @@ function checkSpam() {
   }
   function rand(a, b) { return Math.random() * (b - a) + a; }
   function mkPt() {
-    return { x: rand(0,W), y: rand(0,H), vx: rand(-0.12,0.12), vy: rand(-0.12,0.12), r: rand(0.8,2), a: rand(0.2,0.6) };
+    return { x: rand(0,W), y: rand(0,H), vx: rand(-0.18,0.18), vy: rand(-0.18,0.18), r: rand(1,2.5), a: rand(0.35,0.75) };
   }
   function init() { resize(); pts = Array.from({length:N}, mkPt); }
 
@@ -606,8 +606,8 @@ function checkSpam() {
         const d = Math.hypot(p.x - q.x, p.y - q.y);
         if (d < CONN) {
           ctx.beginPath();
-          ctx.strokeStyle = `rgba(${BLUE},${(1 - d/CONN) * 0.15})`;
-          ctx.lineWidth = 0.5;
+          ctx.strokeStyle = `rgba(${BLUE},${(1 - d/CONN) * 0.25})`;
+          ctx.lineWidth = 0.7;
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(q.x, q.y);
           ctx.stroke();
