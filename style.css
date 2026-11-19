@@ -1010,12 +1010,9 @@ body > footer {
 }
 
 /* Botões flutuantes ficam sempre no topo */
-.whatsapp-float,
-.chat-widget,
-.nav-overlay {
-  position: fixed !important;
-  z-index: 999 !important;
-}
+.whatsapp-float { z-index: 999 !important; }
+.chat-widget    { z-index: 998 !important; }
+.nav-overlay    { z-index: 97  !important; }
 
 /* ═══════════════════════════════════════════
    ASSISTENTE VIRTUAL
