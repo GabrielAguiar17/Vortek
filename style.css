@@ -1257,7 +1257,14 @@ body > footer {
 
 @media (max-width: 480px) {
   .chat-widget { right: 86px; bottom: 20px; }
-  .chat-box { width: calc(100vw - 32px); right: 0; }
+  .chat-box {
+    width: calc(100vw - 24px);
+    right: auto;
+    left: 12px;
+    bottom: 70px;
+    max-height: 75vh;
+  }
+}
 }
 .whatsapp-float {
   position: fixed;
