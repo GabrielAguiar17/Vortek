@@ -4,10 +4,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #050810;
-  --bg2:       #070d1a;
-  --surface:   #0a1222;
-  --surface2:  #0f1a2e;
+  --bg:        rgba(5, 8, 16, 0.92);
+  --bg2:       rgba(7, 13, 26, 0.92);
+  --surface:   rgba(10, 18, 34, 0.95);
+  --surface2:  rgba(15, 26, 46, 0.95);
   --border:    rgba(79, 142, 247, 0.12);
   --blue:      #4F8EF7;
   --blue-glow: rgba(79, 142, 247, 0.25);
@@ -23,7 +23,7 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background: var(--bg);
+  background: #050810;
   color: var(--text);
   line-height: 1.6;
   overflow-x: hidden;
@@ -996,7 +996,7 @@ img { max-width: 100%; display: block; }
   height: 100%;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.35;
+  opacity: 0.6;
 }
 
 /* Garante que seções fiquem acima do canvas mas abaixo dos flutuantes */
