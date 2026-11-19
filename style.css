@@ -1021,8 +1021,11 @@ body > footer {
 .chat-widget,
 .nav-overlay {
   position: fixed !important;
-  z-index: 999 !important;
 }
+
+.whatsapp-float { z-index: 9999 !important; }
+.chat-widget    { z-index: 9998 !important; }
+.nav-overlay    { z-index: 99   !important; }
 
 /* ═══════════════════════════════════════════
    ASSISTENTE VIRTUAL
