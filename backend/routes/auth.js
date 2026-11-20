@@ -1,13 +1,14 @@
 const express = require('express');
 const bcrypt  = require('bcryptjs');
 const router  = express.Router();
-const { db }  = require('../database/db');
+const { query, getLastId } = require('../database/db');
 
 router.post('/login', (req, res) => {
   const { email, senha } = req.body;
   if (!email || !senha) return res.status(400).json({ message: 'Preencha todos os campos.' });
   try {
-    const user = db.prepare('SELECT * FROM clientes WHERE email = ? AND ativo = 1').get(email);
+    const r = query('SELECT * FROM clientes WHERE email = ? AND ativo = 1', [email]);
+    const user = r.recordset[0];
     if (!user) return res.status(401).json({ message: 'E-mail ou senha incorretos.' });
     if (!bcrypt.compareSync(senha, user.senha_hash)) return res.status(401).json({ message: 'E-mail ou senha incorretos.' });
     req.session.userId = user.id;
@@ -15,7 +16,7 @@ router.post('/login', (req, res) => {
     req.session.email  = user.email;
     res.json({ message: 'Login realizado.', nome: user.nome });
   } catch (e) {
-    console.error(e);
+    console.error('Erro login:', e);
     res.status(500).json({ message: 'Erro interno.' });
   }
 });
