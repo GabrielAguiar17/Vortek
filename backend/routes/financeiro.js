@@ -1,21 +1,22 @@
 const express     = require('express');
 const router      = express.Router();
-const db          = require('../database/db');
+const { db }      = require('../database/db');
 const requireAuth = require('../middleware/auth');
 
 router.use(requireAuth);
 
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT c.id, c.descricao, c.valor, c.status, FORMAT(c.vencimento,'dd/MM/yyyy') AS vencimento,
-              FORMAT(c.pago_em,'dd/MM/yyyy') AS pago_em, p.nome AS projeto
-       FROM cobrancas c LEFT JOIN projetos p ON c.projeto_id = p.id
-       WHERE c.cliente_id = @id ORDER BY c.criado_em DESC`,
-      { id: req.session.userId }
-    );
-    res.json(result.recordset);
-  } catch (e) { res.status(500).json({ message: 'Erro ao buscar cobranças.' }); }
+    const rows = db.prepare(`
+      SELECT c.id, c.descricao, c.valor, c.status,
+             strftime('%d/%m/%Y', c.vencimento) as vencimento,
+             strftime('%d/%m/%Y', c.pago_em) as pago_em,
+             p.nome as projeto
+      FROM cobrancas c LEFT JOIN projetos p ON c.projeto_id = p.id
+      WHERE c.cliente_id = ? ORDER BY c.criado_em DESC
+    `).all(req.session.userId);
+    res.json(rows);
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
 });
 
 module.exports = router;
