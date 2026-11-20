@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
@@ -237,7 +237,8 @@
     async function loadTickets() {
       const el = document.getElementById('tickets-list');
       try {
-        const res = await fetch('/api/suporte', { credentials: 'include' });
+        const res = await fetch('https://vortek-production-d724da53.up.railway.app/api/suporte', {
+          credentials: 'include' });
         if (!res.ok) throw new Error();
         const tickets = await res.json();
 
@@ -287,7 +288,8 @@
 
     async function loadProjetosSelect() {
       try {
-        const res = await fetch('/api/projetos', { credentials: 'include' });
+        const res = await fetch('https://vortek-production-d724da53.up.railway.app/api/projetos', {
+          credentials: 'include' });
         if (!res.ok) return;
         const projetos = await res.json();
         const select = document.getElementById('ticket-projeto');
@@ -315,7 +317,8 @@
       btn.textContent = 'Enviando...';
 
       try {
-        const res = await fetch('/api/suporte', {
+        const res = await fetch('https://vortek-production-d724da53.up.railway.app/api/suporte', {
+          credentials: 'include',
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },

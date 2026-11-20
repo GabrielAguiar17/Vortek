@@ -3,7 +3,7 @@
    Lógica compartilhada do painel do cliente
 ═══════════════════════════════════════ */
 
-const API = '/api';
+const API = 'https://vortek-production-d724da53.up.railway.app/api';
 
 /* ── Verifica autenticação ao carregar ── */
 async function checkAuth() {

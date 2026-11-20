@@ -16,7 +16,14 @@ const PORT = process.env.PORT || 3000;
 
 /* ── Segurança ── */
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: [
+    'https://gabrielaguiar17.github.io',
+    'http://localhost:3000',
+    'http://127.0.0.1:5500',
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
