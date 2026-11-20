@@ -118,7 +118,26 @@ img { max-width: 100%; display: block; }
   color: var(--blue);
 }
 
-.full-width { width: 100%; justify-content: center; }
+.btn-cliente {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: rgba(79,142,247,0.1);
+  color: var(--blue);
+  border: 1px solid rgba(79,142,247,0.3);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn-cliente:hover {
+  background: rgba(79,142,247,0.2);
+  border-color: var(--blue);
+}
 
 /* ═══════════════════════════════════════════
    HEADER

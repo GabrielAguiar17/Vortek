@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — Área do Cliente | Vortek</title>
+  <meta name="robots" content="noindex, nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#050810;--surface:#0a1222;--border:rgba(79,142,247,0.15);
+      --blue:#4F8EF7;--blue-glow:rgba(79,142,247,0.25);
+      --text:#e8edf8;--muted:#7a90b8;--white:#fff;
+      --radius:12px;--red:#e05555;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
+    canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5}
+    .login-box{position:relative;z-index:2;width:100%;max-width:420px}
+    .login-logo{text-align:center;margin-bottom:36px}
+    .login-logo img{height:36px;width:auto}
+    .login-logo p{font-size:0.8rem;color:var(--muted);margin-top:8px;letter-spacing:0.08em}
+    .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;position:relative;overflow:hidden}
+    .login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+    h1{font-size:1.4rem;font-weight:800;color:var(--white);margin-bottom:6px}
+    .subtitle{font-size:0.85rem;color:var(--muted);margin-bottom:28px}
+    .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+    label{font-size:0.78rem;font-weight:600;color:var(--muted);letter-spacing:0.04em}
+    input{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:9px;padding:13px 16px;color:var(--text);font-size:0.9rem;font-family:inherit;outline:none;transition:border-color 0.2s}
+    input:focus{border-color:rgba(79,142,247,0.5)}
+    input::placeholder{color:rgba(122,144,184,0.4)}
+    .btn-login{width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-size:0.95rem;font-weight:700;cursor:pointer;box-shadow:0 0 24px var(--blue-glow);transition:all 0.25s;margin-top:8px}
+    .btn-login:hover{background:#6aa0ff;transform:translateY(-2px);box-shadow:0 0 36px rgba(79,142,247,0.45)}
+    .btn-login:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+    .error-msg{background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.3);border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#e07070;margin-bottom:16px;display:none}
+    .error-msg.show{display:block}
+    .back-link{text-align:center;margin-top:20px;font-size:0.82rem;color:var(--muted)}
+    .back-link a{color:var(--blue);text-decoration:none}
+    .back-link a:hover{opacity:0.8}
+    .forgot{text-align:right;margin-top:-12px;margin-bottom:18px}
+    .forgot a{font-size:0.78rem;color:var(--blue);text-decoration:none}
+  </style>
+</head>
+<body>
+  <canvas id="cv"></canvas>
+
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="../logo.svg" alt="Vortek"/>
+      <p>ÁREA DO CLIENTE</p>
+    </div>
+
+    <div class="login-card">
+      <h1>Bem-vindo de volta</h1>
+      <p class="subtitle">Acesse seus projetos e acompanhe seu progresso.</p>
+
+      <div class="error-msg" id="error-msg">E-mail ou senha incorretos. Tente novamente.</div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" placeholder="seu@email.com" required autocomplete="email"/>
+        </div>
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" placeholder="••••••••" required autocomplete="current-password"/>
+        </div>
+        <div class="forgot"><a href="#">Esqueci minha senha</a></div>
+        <button type="submit" class="btn-login" id="btn-login">Entrar</button>
+      </form>
+    </div>
+
+    <p class="back-link"><a href="../index.html">← Voltar ao site</a></p>
+  </div>
+
+  <script>
+    /* Partículas */
+    (function(){
+      const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+      let W,H,pts;
+      function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight}
+      function mkPt(){return{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.15,vy:(Math.random()-.5)*.15,r:Math.random()*1.8+.6,a:Math.random()*.5+.2}}
+      function init(){resize();pts=Array.from({length:80},mkPt)}
+      function draw(){
+        ctx.clearRect(0,0,W,H);
+        for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+          const p=pts[i],q=pts[j],d=Math.hypot(p.x-q.x,p.y-q.y);
+          if(d<120){ctx.beginPath();ctx.strokeStyle=`rgba(79,142,247,${(1-d/120)*.2})`;ctx.lineWidth=.5;ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke()}
+        }
+        pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(79,142,247,${p.a})`;ctx.fill()})
+      }
+      function update(){pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0})}
+      function loop(){update();draw();requestAnimationFrame(loop)}
+      window.addEventListener('resize',resize);init();loop();
+    })();
+
+    /* Login */
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-login');
+      const err = document.getElementById('error-msg');
+      err.classList.remove('show');
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, senha })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          window.location.href = '/cliente/pages/dashboard.html';
+        } else {
+          err.textContent = data.message || 'E-mail ou senha incorretos.';
+          err.classList.add('show');
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
+        }
+      } catch {
+        err.textContent = 'Erro de conexão. Tente novamente.';
+        err.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+      }
+    });
+  </script>
+</body>
+</html>
