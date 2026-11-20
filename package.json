@@ -1,12 +1,15 @@
 {
   "name": "vortek-backend",
   "version": "1.0.0",
+  "description": "Vortek Agencia Digital - Backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "npm install"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
