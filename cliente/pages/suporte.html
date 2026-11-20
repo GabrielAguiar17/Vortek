@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Suporte — Área do Cliente | Vortek</title>
+  <meta name="robots" content="noindex, nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../painel.css"/>
+  <style>
+    .suporte-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .suporte-layout { grid-template-columns: 1fr; }
+    }
+
+    .ticket-status-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .ticket-aberto    { background: rgba(79,142,247,0.1);  color: var(--blue);   border: 1px solid rgba(79,142,247,0.2); }
+    .ticket-respondido{ background: rgba(34,197,94,0.1);   color: var(--green);  border: 1px solid rgba(34,197,94,0.2); }
+    .ticket-fechado   { background: rgba(122,144,184,0.1); color: var(--muted);  border: 1px solid rgba(122,144,184,0.2); }
+
+    .ticket-data {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-left: auto;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .ticket-conversa {
+      display: none;
+      padding: 16px 24px;
+      background: rgba(0,0,0,0.2);
+      border-top: 1px solid var(--border);
+    }
+    .ticket-item.expanded .ticket-conversa { display: block; }
+
+    .msg-item {
+      margin-bottom: 14px;
+    }
+    .msg-item:last-child { margin-bottom: 0; }
+
+    .msg-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .msg-autor {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--blue);
+    }
+    .msg-autor.cliente { color: var(--text); }
+
+    .msg-time {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .msg-body {
+      font-size: 0.85rem;
+      color: var(--text);
+      line-height: 1.6;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: none;
+    }
+    .alert.success { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); display: block; }
+    .alert.error   { background: rgba(224,85,85,0.1);  color: var(--red);   border: 1px solid rgba(224,85,85,0.2);  display: block; }
+
+    .ticket-item {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 0;
+    }
+
+    .ticket-item-header {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .ticket-item-info { flex: 1; min-width: 0; }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="../../logo.svg" alt="Vortek"/>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="projetos.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Meus Projetos
+      </a>
+      <a href="progresso.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Progresso
+      </a>
+      <a href="arquivos.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Arquivos
+      </a>
+      <a href="financeiro.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Financeiro
+      </a>
+      <a href="suporte.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Suporte
+      </a>
+      <a href="perfil.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Perfil
+      </a>
+    </nav>
+    <button class="sidebar-logout" id="btn-logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sair
+    </button>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-toggle" id="menu-toggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title">Suporte</div>
+      <div class="topbar-user" id="topbar-user">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span id="user-name">Carregando...</span>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1>Suporte</h1>
+        <p>Abra um ticket ou acompanhe suas solicitações.</p>
+      </div>
+
+      <div class="suporte-layout">
+
+        <!-- Novo ticket -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h2>Novo ticket</h2>
+          </div>
+          <form class="painel-form" id="form-ticket" onsubmit="enviarTicket(event)">
+            <div id="ticket-alert"></div>
+            <div class="form-group">
+              <label for="ticket-titulo">Título</label>
+              <input type="text" id="ticket-titulo" placeholder="Descreva brevemente o assunto" required/>
+            </div>
+            <div class="form-group">
+              <label for="ticket-projeto">Projeto relacionado</label>
+              <select id="ticket-projeto">
+                <option value="">Selecione um projeto (opcional)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="ticket-mensagem">Mensagem</label>
+              <textarea id="ticket-mensagem" rows="5" placeholder="Descreva sua dúvida ou problema em detalhes..." required></textarea>
+            </div>
+            <button type="submit" class="btn-primary" id="btn-ticket">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Enviar ticket
+            </button>
+          </form>
+        </div>
+
+        <!-- Histórico de tickets -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h2>Meus tickets</h2>
+          </div>
+          <div id="tickets-list">
+            <div class="loading">Carregando tickets...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="../painel.js"></script>
+  <script>
+    function ticketStatusClass(status) {
+      const s = (status || '').toLowerCase();
+      if (s === 'aberto') return 'ticket-aberto';
+      if (s === 'respondido') return 'ticket-respondido';
+      return 'ticket-fechado';
+    }
+
+    function toggleTicket(el) {
+      el.closest('.ticket-item').classList.toggle('expanded');
+    }
+
+    async function loadTickets() {
+      const el = document.getElementById('tickets-list');
+      try {
+        const res = await fetch('/api/suporte', { credentials: 'include' });
+        if (!res.ok) throw new Error();
+        const tickets = await res.json();
+
+        if (!tickets.length) {
+          el.innerHTML = `<div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <p>Nenhum ticket aberto ainda.</p>
+          </div>`;
+          return;
+        }
+
+        el.innerHTML = tickets.map(t => {
+          const mensagens = t.mensagens || [];
+          const ultimaMsg = mensagens[mensagens.length - 1];
+          const conversa = mensagens.length
+            ? mensagens.map(m => `
+              <div class="msg-item">
+                <div class="msg-header">
+                  <span class="msg-autor ${m.tipo === 'cliente' ? 'cliente' : ''}">${m.tipo === 'cliente' ? 'Você' : 'Vortek'}</span>
+                  <span class="msg-time">${m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR') : ''}</span>
+                </div>
+                <div class="msg-body">${m.mensagem || ''}</div>
+              </div>
+            `).join('')
+            : `<div style="font-size:0.82rem;color:var(--muted)">Sem mensagens.</div>`;
+
+          return `
+            <div class="ticket-item" id="ticket-${t.id}">
+              <div class="ticket-item-header" onclick="toggleTicket(this)">
+                <div class="ticket-item-info">
+                  <div class="ticket-titulo">${t.titulo}</div>
+                  <div class="ticket-preview">${ultimaMsg ? ultimaMsg.mensagem.substring(0, 60) + (ultimaMsg.mensagem.length > 60 ? '…' : '') : 'Sem mensagens'}</div>
+                </div>
+                <span class="ticket-status-badge ${ticketStatusClass(t.status)}">${t.status || '—'}</span>
+                <span class="ticket-data">${t.criado_em ? new Date(t.criado_em).toLocaleDateString('pt-BR') : '—'}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="ticket-conversa">${conversa}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        el.innerHTML = `<div class="empty-state"><p>Erro ao carregar tickets.</p></div>`;
+        console.error(e);
+      }
+    }
+
+    async function loadProjetosSelect() {
+      try {
+        const res = await fetch('/api/projetos', { credentials: 'include' });
+        if (!res.ok) return;
+        const projetos = await res.json();
+        const select = document.getElementById('ticket-projeto');
+        projetos.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.nome;
+          select.appendChild(opt);
+        });
+      } catch {}
+    }
+
+    async function enviarTicket(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-ticket');
+      const alertEl = document.getElementById('ticket-alert');
+      alertEl.className = 'alert';
+      alertEl.textContent = '';
+
+      const titulo = document.getElementById('ticket-titulo').value.trim();
+      const projeto_id = document.getElementById('ticket-projeto').value;
+      const mensagem = document.getElementById('ticket-mensagem').value.trim();
+
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      try {
+        const res = await fetch('/api/suporte', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ titulo, projeto_id: projeto_id || null, mensagem }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || 'Erro ao enviar ticket');
+        }
+
+        alertEl.className = 'alert success';
+        alertEl.textContent = 'Ticket enviado com sucesso!';
+        document.getElementById('form-ticket').reset();
+        await loadTickets();
+      } catch (err) {
+        alertEl.className = 'alert error';
+        alertEl.textContent = err.message || 'Erro ao enviar ticket. Tente novamente.';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Enviar ticket`;
+      }
+    }
+
+    loadPage('suporte').then(() => {
+      loadTickets();
+      loadProjetosSelect();
+    });
+  </script>
+</body>
+</html>
