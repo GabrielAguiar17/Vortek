@@ -106,6 +106,44 @@ app.post('/api/auth/login', (req, res) => {
   } catch(e) { console.error(e); res.status(500).json({ message: 'Erro interno.' }); }
 });
 
+app.post('/api/auth/register', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false }), (req, res) => {
+  const nome = typeof req.body?.nome === 'string' ? req.body.nome.trim() : '';
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const telefone = typeof req.body?.telefone === 'string' ? req.body.telefone.trim() : '';
+  const senha = typeof req.body?.senha === 'string' ? req.body.senha : '';
+  const confirmarSenha = typeof req.body?.confirmar_senha === 'string' ? req.body.confirmar_senha : '';
+
+  if (!nome || !email || !senha || !confirmarSenha)
+    return res.status(400).json({ message: 'Preencha todos os campos obrigatórios.' });
+  if (nome.length < 2 || nome.length > 100)
+    return res.status(400).json({ message: 'Informe um nome entre 2 e 100 caracteres.' });
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return res.status(400).json({ message: 'Informe um e-mail válido.' });
+  if (telefone.length > 30)
+    return res.status(400).json({ message: 'O telefone deve ter no máximo 30 caracteres.' });
+  if (senha.length < 8 || Buffer.byteLength(senha, 'utf8') > 72)
+    return res.status(400).json({ message: 'A senha deve ter pelo menos 8 caracteres.' });
+  if (senha !== confirmarSenha)
+    return res.status(400).json({ message: 'As senhas não coincidem.' });
+
+  try {
+    if (q('SELECT id FROM clientes WHERE email=?', [email])[0])
+      return res.status(409).json({ message: 'Este e-mail já possui uma conta. Entre ou recupere sua senha.' });
+    q('INSERT INTO clientes (nome,email,senha_hash,telefone) VALUES (?,?,?,?)',
+      [nome, email, bcrypt.hashSync(senha, 12), telefone || null]);
+    const user = q('SELECT id,nome,email FROM clientes WHERE email=?', [email])[0];
+    req.session.userId = user.id;
+    req.session.nome = user.nome;
+    req.session.email = user.email;
+    res.status(201).json({ message: 'Conta criada.', nome: user.nome });
+  } catch(e) {
+    if (/UNIQUE constraint failed/i.test(e.message || ''))
+      return res.status(409).json({ message: 'Este e-mail já possui uma conta. Entre ou recupere sua senha.' });
+    console.error('Erro ao criar conta:', e);
+    res.status(500).json({ message: 'Não foi possível criar sua conta agora.' });
+  }
+});
+
 app.get('/api/auth/me', (req, res) => {
   if (!req.session?.userId) return res.status(401).json({ message: 'Não autenticado.' });
   res.json({ id: req.session.userId, nome: req.session.nome, email: req.session.email });
