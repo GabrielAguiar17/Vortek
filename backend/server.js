@@ -1,43 +1,78 @@
 /* ═══════════════════════════════════════
-   VORTEK — Backend (Node.js + Express)
-   Banco: SQLite via sql.js (puro JS)
+   VORTEK — Backend standalone
+   Usado pelo Railway (Root Directory: backend)
 ═══════════════════════════════════════ */
 require('dotenv').config();
-const express     = require('express');
-const session     = require('express-session');
-const helmet      = require('helmet');
-const cors        = require('cors');
-const path        = require('path');
-const fs          = require('fs');
-const bcrypt      = require('bcryptjs');
-const rateLimit   = require('express-rate-limit');
-const { getDb, saveDb } = require('./database/db');
+const express    = require('express');
+const session    = require('express-session');
+const helmet     = require('helmet');
+const cors       = require('cors');
+const path       = require('path');
+const fs         = require('fs');
+const bcrypt     = require('bcryptjs');
+const rateLimit  = require('express-rate-limit');
+const initSqlJs  = require('sql.js');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+const DB_PATH = path.join(__dirname, 'database', 'vortek.db');
 
-/* ── Segurança ── */
+/* ══ DB ══ */
+let db = null;
+
+async function initDb() {
+  const SQL = await initSqlJs();
+  const dir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  db = fs.existsSync(DB_PATH)
+    ? new SQL.Database(fs.readFileSync(DB_PATH))
+    : new SQL.Database();
+  db.run('PRAGMA foreign_keys = ON');
+}
+
+function save() {
+  if (db) fs.writeFileSync(DB_PATH, Buffer.from(db.export()));
+}
+
+function q(sql, params = []) {
+  if (!db) throw new Error('DB not ready');
+  if (sql.trim().toUpperCase().startsWith('SELECT')) {
+    const s = db.prepare(sql);
+    s.bind(params);
+    const rows = [];
+    while (s.step()) rows.push(s.getAsObject());
+    s.free();
+    return rows;
+  }
+  db.run(sql, params);
+  save();
+  return [];
+}
+
+function lastId() {
+  return db.exec('SELECT last_insert_rowid()')[0]?.values[0][0] ?? null;
+}
+
+function auth(req, res, next) {
+  if (!req.session?.userId) return res.status(401).json({ message: 'Não autenticado.' });
+  next();
+}
+
+/* ══ MIDDLEWARE ══ */
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
   origin: [
     'https://gabrielaguiar17.github.io',
+    'https://vortek-production-d724da53.up.railway.app',
     'http://localhost:3000',
-    'http://127.0.0.1:5500',
   ],
   credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-/* ── Rate limiting ── */
-app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
-app.use('/api/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 10,
-  message: { message: 'Muitas tentativas. Tente em 15 minutos.' }
-}));
-
-/* ── Sessão segura ── */
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'vortek_dev_secret',
+  secret: process.env.SESSION_SECRET || 'vortek_secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -48,146 +83,173 @@ app.use(session({
   }
 }));
 
-/* ── Arquivos estáticos (site público) ── */
-app.use(express.static(path.join(__dirname, '..')));
+/* ══ ROTAS API ══ */
+app.get('/api/health', (req, res) => res.json({ status: 'ok', version: '3.0', env: process.env.NODE_ENV || 'dev' }));
 
-/* ── Rotas da API ── */
-app.use('/api/auth',       require('./routes/auth'));
-app.use('/api/dashboard',  require('./routes/dashboard'));
-app.use('/api/projetos',   require('./routes/projetos'));
-app.use('/api/arquivos',   require('./routes/arquivos'));
-app.use('/api/financeiro', require('./routes/financeiro'));
-app.use('/api/suporte',    require('./routes/suporte'));
-app.use('/api/perfil',     require('./routes/perfil'));
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { email, senha } = req.body;
+    if (!email || !senha) return res.status(400).json({ message: 'Preencha todos os campos.' });
+    const user = q('SELECT * FROM clientes WHERE email=? AND ativo=1', [email])[0];
+    if (!user || !bcrypt.compareSync(senha, user.senha_hash))
+      return res.status(401).json({ message: 'E-mail ou senha incorretos.' });
+    req.session.userId = user.id;
+    req.session.nome   = user.nome;
+    req.session.email  = user.email;
+    res.json({ message: 'Login realizado.', nome: user.nome });
+  } catch(e) { console.error(e); res.status(500).json({ message: 'Erro interno.' }); }
+});
 
-/* ── Health check ── */
-app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }));
+app.get('/api/auth/me', (req, res) => {
+  if (!req.session?.userId) return res.status(401).json({ message: 'Não autenticado.' });
+  res.json({ id: req.session.userId, nome: req.session.nome, email: req.session.email });
+});
 
-/* ── Setup automático do banco ── */
-async function setupDb(db) {
-  console.log('🔧 Verificando banco de dados...');
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy(() => { res.clearCookie('connect.sid'); res.json({ message: 'Logout.' }); });
+});
 
+app.get('/api/dashboard/stats', auth, (req, res) => {
+  try {
+    const id = req.session.userId;
+    const p = q("SELECT COUNT(*) as n, AVG(CAST(progresso AS REAL)) as avg FROM projetos WHERE cliente_id=? AND status!='Concluído'", [id])[0];
+    const a = q("SELECT COUNT(*) as n FROM arquivos a JOIN projetos p ON a.projeto_id=p.id WHERE p.cliente_id=?", [id])[0];
+    const t = q("SELECT COUNT(*) as n FROM tickets WHERE cliente_id=? AND status='Aberto'", [id])[0];
+    res.json({ projetos: p?.n||0, progresso: Math.round(p?.avg||0), arquivos: a?.n||0, tickets: t?.n||0 });
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.get('/api/dashboard/atividades', auth, (req, res) => {
+  try {
+    res.json(q("SELECT texto, strftime('%d/%m/%Y %H:%M',criado_em) as data FROM atividades WHERE cliente_id=? ORDER BY criado_em DESC LIMIT 10", [req.session.userId]));
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.get('/api/projetos', auth, (req, res) => {
+  try {
+    res.json(q('SELECT id,nome,tipo,status,progresso,inicio,previsao FROM projetos WHERE cliente_id=? ORDER BY criado_em DESC LIMIT ?', [req.session.userId, parseInt(req.query.limit)||100]));
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.get('/api/projetos/:id', auth, (req, res) => {
+  try {
+    const proj = q('SELECT * FROM projetos WHERE id=? AND cliente_id=?', [req.params.id, req.session.userId])[0];
+    if (!proj) return res.status(404).json({ message: 'Não encontrado.' });
+    proj.etapas = q('SELECT * FROM etapas WHERE projeto_id=? ORDER BY ordem', [req.params.id]);
+    res.json(proj);
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.get('/api/arquivos', auth, (req, res) => {
+  try {
+    res.json(q("SELECT a.id,a.nome,a.tamanho,a.tipo,strftime('%d/%m/%Y',a.enviado_em) as data,p.nome as projeto FROM arquivos a JOIN projetos p ON a.projeto_id=p.id WHERE p.cliente_id=? ORDER BY a.enviado_em DESC", [req.session.userId]));
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.get('/api/financeiro', auth, (req, res) => {
+  try {
+    res.json(q("SELECT c.id,c.descricao,c.valor,c.status,strftime('%d/%m/%Y',c.vencimento) as vencimento,strftime('%d/%m/%Y',c.pago_em) as pago_em,p.nome as projeto FROM cobrancas c LEFT JOIN projetos p ON c.projeto_id=p.id WHERE c.cliente_id=? ORDER BY c.criado_em DESC", [req.session.userId]));
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.get('/api/suporte', auth, (req, res) => {
+  try {
+    const tickets = q("SELECT t.id,t.titulo,t.status,strftime('%d/%m/%Y',t.criado_em) as data FROM tickets t WHERE t.cliente_id=? ORDER BY t.criado_em DESC", [req.session.userId]);
+    tickets.forEach(t => { t.ultima_msg = q('SELECT mensagem FROM ticket_mensagens WHERE ticket_id=? ORDER BY criado_em DESC LIMIT 1', [t.id])[0]?.mensagem || ''; });
+    res.json(tickets);
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.get('/api/suporte/:id', auth, (req, res) => {
+  try {
+    const ticket = q('SELECT * FROM tickets WHERE id=? AND cliente_id=?', [req.params.id, req.session.userId])[0];
+    if (!ticket) return res.status(404).json({ message: 'Não encontrado.' });
+    ticket.mensagens = q("SELECT autor,mensagem,strftime('%d/%m/%Y %H:%M',criado_em) as data FROM ticket_mensagens WHERE ticket_id=? ORDER BY criado_em", [req.params.id]);
+    res.json(ticket);
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.post('/api/suporte', auth, (req, res) => {
+  const { titulo, mensagem, projeto_id } = req.body;
+  if (!titulo || !mensagem) return res.status(400).json({ message: 'Preencha todos os campos.' });
+  try {
+    q('INSERT INTO tickets (cliente_id,projeto_id,titulo,mensagem) VALUES (?,?,?,?)', [req.session.userId, projeto_id||null, titulo, mensagem]);
+    const tid = lastId();
+    q('INSERT INTO ticket_mensagens (ticket_id,autor,mensagem) VALUES (?,?,?)', [tid,'cliente',mensagem]);
+    q('INSERT INTO atividades (cliente_id,texto) VALUES (?,?)', [req.session.userId, `Ticket: "${titulo}"`]);
+    res.status(201).json({ message: 'Ticket criado!' });
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.get('/api/perfil', auth, (req, res) => {
+  try { res.json(q('SELECT id,nome,email,telefone,criado_em FROM clientes WHERE id=?', [req.session.userId])[0]); }
+  catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.put('/api/perfil', auth, (req, res) => {
+  const { nome, telefone } = req.body;
+  if (!nome) return res.status(400).json({ message: 'Nome obrigatório.' });
+  try {
+    q('UPDATE clientes SET nome=?,telefone=? WHERE id=?', [nome, telefone||null, req.session.userId]);
+    req.session.nome = nome;
+    res.json({ message: 'Perfil atualizado!' });
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+app.put('/api/perfil/senha', auth, (req, res) => {
+  const { senha_atual, nova_senha } = req.body;
+  if (!senha_atual || !nova_senha || nova_senha.length < 6)
+    return res.status(400).json({ message: 'Nova senha deve ter pelo menos 6 caracteres.' });
+  try {
+    const user = q('SELECT senha_hash FROM clientes WHERE id=?', [req.session.userId])[0];
+    if (!bcrypt.compareSync(senha_atual, user.senha_hash))
+      return res.status(400).json({ message: 'Senha atual incorreta.' });
+    q('UPDATE clientes SET senha_hash=? WHERE id=?', [bcrypt.hashSync(nova_senha, 12), req.session.userId]);
+    res.json({ message: 'Senha alterada!' });
+  } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+/* ══ SETUP DB ══ */
+async function setup() {
   db.run(`
-    CREATE TABLE IF NOT EXISTS clientes (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome       TEXT NOT NULL,
-      email      TEXT NOT NULL UNIQUE,
-      senha_hash TEXT NOT NULL,
-      telefone   TEXT,
-      ativo      INTEGER DEFAULT 1,
-      criado_em  TEXT DEFAULT (datetime('now','localtime'))
-    );
-    CREATE TABLE IF NOT EXISTS projetos (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      cliente_id INTEGER NOT NULL REFERENCES clientes(id),
-      nome       TEXT NOT NULL,
-      tipo       TEXT,
-      descricao  TEXT,
-      status     TEXT DEFAULT 'Em andamento',
-      progresso  INTEGER DEFAULT 0,
-      inicio     TEXT,
-      previsao   TEXT,
-      criado_em  TEXT DEFAULT (datetime('now','localtime'))
-    );
-    CREATE TABLE IF NOT EXISTS etapas (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      projeto_id INTEGER NOT NULL REFERENCES projetos(id),
-      nome       TEXT NOT NULL,
-      concluida  INTEGER DEFAULT 0,
-      ordem      INTEGER DEFAULT 0
-    );
-    CREATE TABLE IF NOT EXISTS arquivos (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      projeto_id INTEGER NOT NULL REFERENCES projetos(id),
-      nome       TEXT NOT NULL,
-      caminho    TEXT NOT NULL,
-      tamanho    INTEGER,
-      tipo       TEXT,
-      enviado_em TEXT DEFAULT (datetime('now','localtime'))
-    );
-    CREATE TABLE IF NOT EXISTS cobrancas (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      cliente_id INTEGER NOT NULL REFERENCES clientes(id),
-      projeto_id INTEGER REFERENCES projetos(id),
-      descricao  TEXT,
-      valor      REAL NOT NULL,
-      status     TEXT DEFAULT 'Pendente',
-      vencimento TEXT,
-      pago_em    TEXT,
-      criado_em  TEXT DEFAULT (datetime('now','localtime'))
-    );
-    CREATE TABLE IF NOT EXISTS tickets (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      cliente_id INTEGER NOT NULL REFERENCES clientes(id),
-      projeto_id INTEGER REFERENCES projetos(id),
-      titulo     TEXT NOT NULL,
-      mensagem   TEXT NOT NULL,
-      status     TEXT DEFAULT 'Aberto',
-      criado_em  TEXT DEFAULT (datetime('now','localtime'))
-    );
-    CREATE TABLE IF NOT EXISTS ticket_mensagens (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      ticket_id  INTEGER NOT NULL REFERENCES tickets(id),
-      autor      TEXT DEFAULT 'cliente',
-      mensagem   TEXT NOT NULL,
-      criado_em  TEXT DEFAULT (datetime('now','localtime'))
-    );
-    CREATE TABLE IF NOT EXISTS atividades (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      cliente_id INTEGER NOT NULL REFERENCES clientes(id),
-      texto      TEXT NOT NULL,
-      criado_em  TEXT DEFAULT (datetime('now','localtime'))
-    );
+    CREATE TABLE IF NOT EXISTS clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, email TEXT NOT NULL UNIQUE, senha_hash TEXT NOT NULL, telefone TEXT, ativo INTEGER DEFAULT 1, criado_em TEXT DEFAULT (datetime('now','localtime')));
+    CREATE TABLE IF NOT EXISTS projetos (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL, nome TEXT NOT NULL, tipo TEXT, status TEXT DEFAULT 'Em andamento', progresso INTEGER DEFAULT 0, inicio TEXT, previsao TEXT, criado_em TEXT DEFAULT (datetime('now','localtime')));
+    CREATE TABLE IF NOT EXISTS etapas (id INTEGER PRIMARY KEY AUTOINCREMENT, projeto_id INTEGER NOT NULL, nome TEXT NOT NULL, concluida INTEGER DEFAULT 0, ordem INTEGER DEFAULT 0);
+    CREATE TABLE IF NOT EXISTS arquivos (id INTEGER PRIMARY KEY AUTOINCREMENT, projeto_id INTEGER NOT NULL, nome TEXT NOT NULL, caminho TEXT NOT NULL, tamanho INTEGER, tipo TEXT, enviado_em TEXT DEFAULT (datetime('now','localtime')));
+    CREATE TABLE IF NOT EXISTS cobrancas (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL, projeto_id INTEGER, descricao TEXT, valor REAL NOT NULL, status TEXT DEFAULT 'Pendente', vencimento TEXT, pago_em TEXT, criado_em TEXT DEFAULT (datetime('now','localtime')));
+    CREATE TABLE IF NOT EXISTS tickets (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL, projeto_id INTEGER, titulo TEXT NOT NULL, mensagem TEXT NOT NULL, status TEXT DEFAULT 'Aberto', criado_em TEXT DEFAULT (datetime('now','localtime')));
+    CREATE TABLE IF NOT EXISTS ticket_mensagens (id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id INTEGER NOT NULL, autor TEXT DEFAULT 'cliente', mensagem TEXT NOT NULL, criado_em TEXT DEFAULT (datetime('now','localtime')));
+    CREATE TABLE IF NOT EXISTS atividades (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL, texto TEXT NOT NULL, criado_em TEXT DEFAULT (datetime('now','localtime')));
   `);
 
-  console.log('✅ Tabelas verificadas!');
-
-  /* Cliente de teste — cria só se não existir */
-  const existe = db.exec("SELECT id FROM clientes WHERE email = 'cliente@vortek.com'");
+  const existe = db.exec("SELECT id FROM clientes WHERE email='cliente@vortek.com'");
   if (!existe.length || !existe[0].values.length) {
-    const hash = bcrypt.hashSync('123456', 12);
-    db.run('INSERT INTO clientes (nome, email, senha_hash, telefone) VALUES (?,?,?,?)',
-      ['Cliente Teste', 'cliente@vortek.com', hash, '(38) 99999-0000']);
-    const clienteId = db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
+    q('INSERT INTO clientes (nome,email,senha_hash,telefone) VALUES (?,?,?,?)', ['Cliente Teste','cliente@vortek.com',bcrypt.hashSync('123456',12),'(38) 99999-0000']);
+    const cid = lastId();
+    q('INSERT INTO projetos (cliente_id,nome,tipo,status,progresso,inicio,previsao) VALUES (?,?,?,?,?,?,?)', [cid,'Site Institucional','Website','Em andamento',65,'2025-01-10','2025-02-10']);
+    const pid = lastId();
+    [['Briefing',1,1],['Design',1,2],['Desenvolvimento',1,3],['Testes',0,4],['Entrega',0,5]].forEach(([n,c,o])=>q('INSERT INTO etapas (projeto_id,nome,concluida,ordem) VALUES (?,?,?,?)',[pid,n,c,o]));
+    q('INSERT INTO cobrancas (cliente_id,projeto_id,descricao,valor,status,vencimento) VALUES (?,?,?,?,?,?)',[cid,pid,'Sinal',750,'Pago','2025-01-15']);
+    q('INSERT INTO cobrancas (cliente_id,projeto_id,descricao,valor,status,vencimento) VALUES (?,?,?,?,?,?)',[cid,pid,'Saldo',750,'Pendente','2025-02-10']);
+    q('INSERT INTO tickets (cliente_id,projeto_id,titulo,mensagem,status) VALUES (?,?,?,?,?)',[cid,pid,'Dúvida sobre prazo','Quando o site estará pronto?','Respondido']);
+    const tid = lastId();
+    q('INSERT INTO ticket_mensagens (ticket_id,autor,mensagem) VALUES (?,?,?)',[tid,'vortek','Previsão para 10/02!']);
+    ['Projeto criado.','Design concluído.','Desenvolvimento concluído.','Pagamento confirmado.'].forEach(t=>q('INSERT INTO atividades (cliente_id,texto) VALUES (?,?)',[cid,t]));
+    console.log('✅ Cliente teste: cliente@vortek.com / 123456');
+  }
 
-    db.run('INSERT INTO projetos (cliente_id, nome, tipo, status, progresso, inicio, previsao) VALUES (?,?,?,?,?,?,?)',
-      [clienteId, 'Site Institucional Vortek', 'Website', 'Em andamento', 65, '2025-01-10', '2025-02-10']);
-    const projetoId = db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
-
-    [['Briefing e planejamento',1,1],['Design e prototipagem',1,2],
-     ['Desenvolvimento frontend',1,3],['Integração e testes',0,4],['Publicação e entrega',0,5]]
-    .forEach(([nome,c,o]) => db.run('INSERT INTO etapas (projeto_id,nome,concluida,ordem) VALUES (?,?,?,?)',[projetoId,nome,c,o]));
-
-    db.run('INSERT INTO cobrancas (cliente_id,projeto_id,descricao,valor,status,vencimento) VALUES (?,?,?,?,?,?)',
-      [clienteId,projetoId,'Sinal — Site Institucional',750,'Pago','2025-01-15']);
-    db.run('INSERT INTO cobrancas (cliente_id,projeto_id,descricao,valor,status,vencimento) VALUES (?,?,?,?,?,?)',
-      [clienteId,projetoId,'Saldo — Site Institucional',750,'Pendente','2025-02-10']);
-
-    db.run('INSERT INTO tickets (cliente_id,projeto_id,titulo,mensagem,status) VALUES (?,?,?,?,?)',
-      [clienteId,projetoId,'Dúvida sobre prazo','Olá, quando o site estará pronto?','Respondido']);
-    const ticketId = db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
-    db.run('INSERT INTO ticket_mensagens (ticket_id,autor,mensagem) VALUES (?,?,?)',
-      [ticketId,'vortek','Previsão para 10/02. Qualquer dúvida, estamos à disposição!']);
-
-    ['Projeto "Site Institucional" criado.','Etapa "Design" concluída.',
-     'Etapa "Desenvolvimento" concluída.','Pagamento de R$ 750,00 confirmado.']
-    .forEach(t => db.run('INSERT INTO atividades (cliente_id,texto) VALUES (?,?)',[clienteId,t]));
-
-    saveDb();
-    console.log('✅ Cliente de teste criado: cliente@vortek.com / 123456');
-  } else {
-    console.log('ℹ️  Banco já configurado.');
+  /* Cria usuario Gabriel se não existir */
+  const gabriel = db.exec("SELECT id FROM clientes WHERE email='gabrielsantosaguiar2@gmail.com'");
+  if (!gabriel.length || !gabriel[0].values.length) {
+    q('INSERT INTO clientes (nome,email,senha_hash,telefone) VALUES (?,?,?,?)', ['Gabriel Aguiar','gabrielsantosaguiar2@gmail.com',bcrypt.hashSync('gabriel123',12),'(38) 99219-3008']);
+    console.log('✅ Usuario Gabriel criado');
   }
 }
 
-/* ── Inicializa banco e sobe servidor ── */
-getDb().then(async (db) => {
-  await setupDb(db);
+/* ══ START ══ */
+initDb().then(async () => {
+  await setup();
   app.listen(PORT, () => {
-    console.log(`\n✅ Vortek rodando na porta ${PORT}`);
-    console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}\n`);
+    console.log(`✅ Vortek porta ${PORT} | ${process.env.NODE_ENV||'dev'}`);
   });
-}).catch(err => {
-  console.error('❌ Erro ao inicializar banco:', err);
-  process.exit(1);
-});
+}).catch(err => { console.error('❌', err); process.exit(1); });
