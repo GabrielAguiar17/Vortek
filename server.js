@@ -224,8 +224,11 @@ app.put('/api/perfil/senha', auth, (req, res) => {
   } catch(e) { res.status(500).json({ message: 'Erro.' }); }
 });
 
-/* ══ STATIC (por último) ══ */
-app.use(express.static(__dirname));
+/* ══ STATIC (por último, apenas arquivos que existem) ══ */
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  express.static(__dirname)(req, res, next);
+});
 
 /* ══ SETUP DB ══ */
 async function setup() {
