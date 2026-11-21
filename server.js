@@ -16,6 +16,7 @@ const rateLimit  = require('express-rate-limit');
 const initSqlJs  = require('sql.js');
 
 const app  = express();
+app.set('trust proxy', 1);
 const accessTokens = new Map();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_SITE_URL = (process.env.PUBLIC_SITE_URL || 'https://gabrielaguiar17.github.io/Vortek').replace(/\/+$/, '');
