@@ -87,7 +87,9 @@ app.use(session({
 /* ══ ROTAS API ══ */
 
 /* Health */
-app.get('/api/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV || 'dev' }));
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', env: process.env.NODE_ENV || 'dev', version: '2.0' });
+});
 
 /* Auth */
 app.post('/api/auth/login', (req, res) => {
