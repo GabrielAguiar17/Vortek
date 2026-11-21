@@ -85,6 +85,11 @@ app.use(session({
   }
 }));
 
+/* O Railway hospeda a API; o site público está no GitHub Pages. */
+app.get('/', (req, res) => {
+  res.redirect(302, PUBLIC_SITE_URL + '/');
+});
+
 /* Redireciona as telas do cliente para o GitHub Pages. O Railway hospeda a API. */
 app.use('/cliente', (req, res) => {
   res.redirect(302, `${PUBLIC_SITE_URL}${req.originalUrl}`);
