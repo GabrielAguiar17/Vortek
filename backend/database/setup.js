@@ -101,58 +101,6 @@ const DB_PATH = path.join(__dirname, 'vortek.db');
 
   console.log('✅ Tabelas criadas!');
 
-  /* Verifica se cliente teste já existe */
-  const existe = db.exec("SELECT id FROM clientes WHERE email = 'cliente@vortek.com'");
-
-  if (!existe.length || !existe[0].values.length) {
-    const hash = bcrypt.hashSync('123456', 12);
-
-    db.run('INSERT INTO clientes (nome, email, senha_hash, telefone) VALUES (?,?,?,?)',
-      ['Cliente Teste', 'cliente@vortek.com', hash, '(38) 99999-0000']);
-    const clienteId = db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
-
-    db.run('INSERT INTO projetos (cliente_id, nome, tipo, status, progresso, inicio, previsao) VALUES (?,?,?,?,?,?,?)',
-      [clienteId, 'Site Institucional Vortek', 'Website', 'Em andamento', 65, '2025-01-10', '2025-02-10']);
-    const projetoId = db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
-
-    const etapas = [
-      ['Briefing e planejamento',   1, 1],
-      ['Design e prototipagem',      1, 2],
-      ['Desenvolvimento frontend',   1, 3],
-      ['Integração e testes',        0, 4],
-      ['Publicação e entrega',       0, 5],
-    ];
-    etapas.forEach(([nome, concluida, ordem]) =>
-      db.run('INSERT INTO etapas (projeto_id, nome, concluida, ordem) VALUES (?,?,?,?)',
-        [projetoId, nome, concluida, ordem]));
-
-    db.run('INSERT INTO cobrancas (cliente_id, projeto_id, descricao, valor, status, vencimento) VALUES (?,?,?,?,?,?)',
-      [clienteId, projetoId, 'Sinal — Site Institucional', 750, 'Pago', '2025-01-15']);
-    db.run('INSERT INTO cobrancas (cliente_id, projeto_id, descricao, valor, status, vencimento) VALUES (?,?,?,?,?,?)',
-      [clienteId, projetoId, 'Saldo — Site Institucional', 750, 'Pendente', '2025-02-10']);
-
-    db.run('INSERT INTO tickets (cliente_id, projeto_id, titulo, mensagem, status) VALUES (?,?,?,?,?)',
-      [clienteId, projetoId, 'Dúvida sobre prazo de entrega', 'Olá, quando o site estará pronto?', 'Respondido']);
-    const ticketId = db.exec('SELECT last_insert_rowid() as id')[0].values[0][0];
-    db.run('INSERT INTO ticket_mensagens (ticket_id, autor, mensagem) VALUES (?,?,?)',
-      [ticketId, 'vortek', 'Olá! Previsão para 10/02. Qualquer dúvida, estamos à disposição!']);
-
-    const atividades = [
-      'Projeto "Site Institucional" criado.',
-      'Etapa "Design e prototipagem" concluída.',
-      'Etapa "Desenvolvimento frontend" concluída.',
-      'Pagamento de R$ 750,00 confirmado.',
-    ];
-    atividades.forEach(t =>
-      db.run('INSERT INTO atividades (cliente_id, texto) VALUES (?,?)', [clienteId, t]));
-
-    console.log('✅ Cliente de teste criado!');
-    console.log('   📧 E-mail: cliente@vortek.com');
-    console.log('   🔑 Senha:  123456');
-  } else {
-    console.log('ℹ️  Cliente de teste já existe.');
-  }
-
   /* Salva o banco em disco */
   const data = db.export();
   fs.writeFileSync(DB_PATH, Buffer.from(data));
