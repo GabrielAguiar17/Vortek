@@ -213,8 +213,10 @@ app.post('/api/auth/forgot-password', passwordRecoveryLimiter, async (req, res) 
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const generic = { message: 'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.' };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.json(generic);
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    return res.status(503).json({ message: 'A recuperação por e-mail ainda não está configurada. Configure o SMTP do Railway ou contate o suporte.' });
+  const resendReady = Boolean(process.env.RESEND_API_KEY && process.env.MAIL_FROM);
+  const smtpReady = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+  if (!resendReady && !smtpReady) {
+    return res.status(503).json({ message: 'A recuperação por e-mail ainda não está configurada. Configure Resend ou SMTP no Railway.' });
   }
   try {
     const user = q('SELECT id,email FROM clientes WHERE lower(email)=? AND ativo=1', [email])[0];
@@ -225,20 +227,25 @@ app.post('/api/auth/forgot-password', passwordRecoveryLimiter, async (req, res) 
       q('DELETE FROM password_reset_tokens WHERE cliente_id=?', [user.id]);
       q('INSERT INTO password_reset_tokens (cliente_id,token_hash,expires_at) VALUES (?,?,?)', [user.id,tokenHash,expiresAt]);
       const resetUrl = `${AUTH_PUBLIC_URL}/cliente/redefinir-senha.html?token=${encodeURIComponent(token)}`;
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: Number(process.env.SMTP_PORT) || 465,
-        secure: process.env.SMTP_SECURE ? String(process.env.SMTP_SECURE).toLowerCase() === 'true' : (Number(process.env.SMTP_PORT) || 465) === 465,
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-      });
+      const text = `Recebemos uma solicitação para redefinir sua senha da Vortek. Acesse o link abaixo em até 30 minutos:\n\n${resetUrl}\n\nSe você não solicitou, ignore esta mensagem.`;
+      const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;padding:24px;background:#0a1222;color:#e8edf8;border-radius:14px"><h2>Redefinir senha</h2><p>Recebemos uma solicitação para redefinir sua senha da Vortek.</p><p><a href="${resetUrl}" style="display:inline-block;padding:12px 18px;background:#4f8ef7;color:white;border-radius:8px;text-decoration:none">Criar nova senha</a></p><p>O link expira em 30 minutos. Se você não solicitou a redefinição, ignore esta mensagem.</p></div>`;
       try {
-        await transporter.sendMail({
-          from: process.env.SMTP_FROM || process.env.SMTP_USER,
-          to: user.email,
-          subject: 'Redefina sua senha | Vortek',
-          text: `Recebemos uma solicitação para redefinir sua senha da Vortek. Acesse o link abaixo em até 30 minutos:\n\n${resetUrl}\n\nSe você não solicitou, ignore esta mensagem.`,
-          html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;padding:24px;background:#0a1222;color:#e8edf8;border-radius:14px"><h2>Redefinir senha</h2><p>Recebemos uma solicitação para redefinir sua senha da Vortek.</p><p><a href="${resetUrl}" style="display:inline-block;padding:12px 18px;background:#4f8ef7;color:white;border-radius:8px;text-decoration:none">Criar nova senha</a></p><p>O link expira em 30 minutos. Se você não solicitou a redefinição, ignore este e-mail.</p></div>`
-        });
+        if (resendReady) {
+          const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from: process.env.MAIL_FROM, to: [user.email], subject: 'Redefina sua senha | Vortek', text, html })
+          });
+          if (!response.ok) throw new Error(`Resend HTTP ${response.status}: ${(await response.text()).slice(0,300)}`);
+        } else {
+          const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: Number(process.env.SMTP_PORT) || 465,
+            secure: process.env.SMTP_SECURE ? String(process.env.SMTP_SECURE).toLowerCase() === 'true' : (Number(process.env.SMTP_PORT) || 465) === 465,
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+          });
+          await transporter.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to: user.email, subject: 'Redefina sua senha | Vortek', text, html });
+        }
       } catch (mailError) {
         q('DELETE FROM password_reset_tokens WHERE cliente_id=?', [user.id]);
         throw mailError;
