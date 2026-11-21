@@ -5,6 +5,7 @@
 require('dotenv').config();
 const express    = require('express');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const session    = require('express-session');
 const helmet     = require('helmet');
 const cors       = require('cors');
@@ -19,6 +20,7 @@ const accessTokens = new Map();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_SITE_URL = (process.env.PUBLIC_SITE_URL || 'https://gabrielaguiar17.github.io/Vortek').replace(/\/+$/, '');
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const AUTH_PUBLIC_URL = (process.env.AUTH_PUBLIC_URL || 'https://vortek-production-d724da53.up.railway.app').replace(/\/+$/, '');
 const DB_PATH = path.join(__dirname, 'backend', 'database', 'vortek.db');
 
 /* ══ DB ══ */
@@ -203,6 +205,83 @@ app.post('/api/auth/logout', (req, res) => {
   const bearer = req.get('authorization')?.match(/^Bearer\s+(\S+)$/i)?.[1];
   if (bearer) accessTokens.delete(bearer);
   req.session.destroy(() => { res.clearCookie('connect.sid'); res.json({ message: 'Logout.' }); });
+});
+
+/* Password recovery */
+const passwordRecoveryLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false });
+app.post('/api/auth/forgot-password', passwordRecoveryLimiter, async (req, res) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const generic = { message: 'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.' };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.json(generic);
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    return res.status(503).json({ message: 'A recuperação por e-mail ainda não está configurada. Configure o SMTP do Railway ou contate o suporte.' });
+  }
+  try {
+    const user = q('SELECT id,email FROM clientes WHERE lower(email)=? AND ativo=1', [email])[0];
+    if (user) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const expiresAt = Date.now() + 30 * 60 * 1000;
+      q('DELETE FROM password_reset_tokens WHERE cliente_id=?', [user.id]);
+      q('INSERT INTO password_reset_tokens (cliente_id,token_hash,expires_at) VALUES (?,?,?)', [user.id,tokenHash,expiresAt]);
+      const resetUrl = `${AUTH_PUBLIC_URL}/cliente/redefinir-senha.html?token=${encodeURIComponent(token)}`;
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: Number(process.env.SMTP_PORT) || 465,
+        secure: process.env.SMTP_SECURE ? String(process.env.SMTP_SECURE).toLowerCase() === 'true' : (Number(process.env.SMTP_PORT) || 465) === 465,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+      });
+      try {
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || process.env.SMTP_USER,
+          to: user.email,
+          subject: 'Redefina sua senha | Vortek',
+          text: `Recebemos uma solicitação para redefinir sua senha da Vortek. Acesse o link abaixo em até 30 minutos:\n\n${resetUrl}\n\nSe você não solicitou, ignore esta mensagem.`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:24px auto;padding:24px;background:#0a1222;color:#e8edf8;border-radius:14px"><h2>Redefinir senha</h2><p>Recebemos uma solicitação para redefinir sua senha da Vortek.</p><p><a href="${resetUrl}" style="display:inline-block;padding:12px 18px;background:#4f8ef7;color:white;border-radius:8px;text-decoration:none">Criar nova senha</a></p><p>O link expira em 30 minutos. Se você não solicitou a redefinição, ignore este e-mail.</p></div>`
+        });
+      } catch (mailError) {
+        q('DELETE FROM password_reset_tokens WHERE cliente_id=?', [user.id]);
+        throw mailError;
+      }
+    }
+    res.json(generic);
+  } catch (e) {
+    console.error('Password recovery email failed:', e?.message || e);
+    res.json(generic);
+  }
+});
+
+app.post('/api/auth/reset-password', passwordRecoveryLimiter, (req, res) => {
+  const token = typeof req.body?.token === 'string' ? req.body.token : '';
+  const senha = typeof req.body?.senha === 'string' ? req.body.senha : '';
+  const confirmar = typeof req.body?.confirmar_senha === 'string' ? req.body.confirmar_senha : '';
+  if (!/^[a-f0-9]{64}$/.test(token)) return res.status(400).json({ message: 'Este link é inválido ou expirou. Solicite outro.' });
+  if (senha.length < 8 || Buffer.byteLength(senha, 'utf8') > 72) return res.status(400).json({ message: 'A senha precisa ter entre 8 e 72 bytes.' });
+  if (senha !== confirmar) return res.status(400).json({ message: 'As senhas não coincidem.' });
+  try {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const recovery = q('SELECT cliente_id FROM password_reset_tokens WHERE token_hash=? AND expires_at>? AND usado_em IS NULL', [tokenHash,Date.now()])[0];
+    if (!recovery) return res.status(400).json({ message: 'Este link é inválido ou expirou. Solicite outro.' });
+    const userId = recovery.cliente_id;
+    const hash = bcrypt.hashSync(senha, 12);
+    db.run('BEGIN IMMEDIATE');
+    try {
+      db.run('UPDATE clientes SET senha_hash=? WHERE id=? AND ativo=1', [hash,userId]);
+      db.run("UPDATE password_reset_tokens SET usado_em=datetime('now') WHERE token_hash=? AND usado_em IS NULL", [tokenHash]);
+      db.run('COMMIT');
+      save();
+    } catch (e) {
+      db.run('ROLLBACK');
+      throw e;
+    }
+    for (const [activeToken, entry] of accessTokens) {
+      if (entry.userId === userId) accessTokens.delete(activeToken);
+    }
+    res.json({ message: 'Senha redefinida. Entre com sua nova senha.', redirect: '/cliente/login.html' });
+  } catch (e) {
+    console.error('Password reset failed:', e);
+    res.status(500).json({ message: 'Não foi possível redefinir a senha agora.' });
+  }
 });
 
 /* Dashboard */
@@ -514,6 +593,7 @@ async function setup() {
     CREATE TABLE IF NOT EXISTS tickets (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL REFERENCES clientes(id), projeto_id INTEGER REFERENCES projetos(id), titulo TEXT NOT NULL, mensagem TEXT NOT NULL, status TEXT DEFAULT 'Aberto', criado_em TEXT DEFAULT (datetime('now','localtime')));
     CREATE TABLE IF NOT EXISTS ticket_mensagens (id INTEGER PRIMARY KEY AUTOINCREMENT, ticket_id INTEGER NOT NULL REFERENCES tickets(id), autor TEXT DEFAULT 'cliente', mensagem TEXT NOT NULL, criado_em TEXT DEFAULT (datetime('now','localtime')));
     CREATE TABLE IF NOT EXISTS atividades (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL REFERENCES clientes(id), texto TEXT NOT NULL, criado_em TEXT DEFAULT (datetime('now','localtime')));
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL REFERENCES clientes(id), token_hash TEXT NOT NULL UNIQUE, expires_at INTEGER NOT NULL, usado_em TEXT, criado_em TEXT DEFAULT (datetime('now','localtime')));
   `);
 
 
