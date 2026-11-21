@@ -72,7 +72,8 @@
       try{
         const res=await fetch('https://vortek-production-d724da53.up.railway.app/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,email,telefone,senha,confirmar_senha})});
         const data=await res.json();
-        if(!res.ok){err.textContent=data.message||'Não foi possível criar sua conta.';err.classList.add('show');btn.disabled=false;btn.textContent='Criar conta';return}
+        if(!res.ok||!data.token){err.textContent=data.message||(res.ok?'Não foi possível iniciar sua sessão. Tente novamente.':'Não foi possível criar sua conta.');err.classList.add('show');btn.disabled=false;btn.textContent='Criar conta';return}
+        sessionStorage.setItem('vortek_access_token',data.token);
         ok.textContent='Conta criada! Abrindo sua área do cliente...';ok.classList.add('show');
         window.setTimeout(()=>{window.location.href=new URL('pages/dashboard.html',window.location.href).href},500);
       }catch{err.textContent='Erro de conexão. Tente novamente.';err.classList.add('show');btn.disabled=false;btn.textContent='Criar conta'}

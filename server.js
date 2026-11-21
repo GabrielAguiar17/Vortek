@@ -4,6 +4,7 @@
 ═══════════════════════════════════════ */
 require('dotenv').config();
 const express    = require('express');
+const crypto = require('crypto');
 const session    = require('express-session');
 const helmet     = require('helmet');
 const cors       = require('cors');
@@ -14,6 +15,7 @@ const rateLimit  = require('express-rate-limit');
 const initSqlJs  = require('sql.js');
 
 const app  = express();
+const accessTokens = new Map();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_SITE_URL = (process.env.PUBLIC_SITE_URL || 'https://gabrielaguiar17.github.io/Vortek').replace(/\/+$/, '');
 const DB_PATH = path.join(__dirname, 'backend', 'database', 'vortek.db');
@@ -55,7 +57,38 @@ function lastId() {
 }
 
 /* ══ MIDDLEWARE ══ */
+function createAccessToken(userId) {
+  for (const [existingToken, entry] of accessTokens) {
+    if (entry.expiresAt <= Date.now()) accessTokens.delete(existingToken);
+  }
+  const token = crypto.randomBytes(32).toString('base64url');
+  accessTokens.set(token, { userId, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
+  return token;
+}
+
 function auth(req, res, next) {
+  const bearer = req.get('authorization')?.match(/^Bearer\s+(\S+)$/i)?.[1];
+  if (bearer) {
+    const entry = accessTokens.get(bearer);
+    if (!entry || entry.expiresAt <= Date.now()) {
+      accessTokens.delete(bearer);
+      return res.status(401).json({ message: 'Sessão expirada. Entre novamente.' });
+    }
+    try {
+      const user = q('SELECT id,nome,email FROM clientes WHERE id=? AND ativo=1', [entry.userId])[0];
+      if (!user) {
+        accessTokens.delete(bearer);
+        return res.status(401).json({ message: 'Não autenticado.' });
+      }
+      req.session.userId = user.id;
+      req.session.nome = user.nome;
+      req.session.email = user.email;
+      return next();
+    } catch(e) {
+      console.error('Erro ao validar sessão:', e);
+      return res.status(500).json({ message: 'Erro interno.' });
+    }
+  }
   if (!req.session?.userId) return res.status(401).json({ message: 'Não autenticado.' });
   next();
 }
@@ -68,7 +101,8 @@ app.use(cors({
     'https://vortek-production-d724da53.up.railway.app',
     'http://localhost:3000',
   ],
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -114,7 +148,7 @@ app.post('/api/auth/login', (req, res) => {
     req.session.userId = user.id;
     req.session.nome   = user.nome;
     req.session.email  = user.email;
-    res.json({ message: 'Login realizado.', nome: user.nome });
+    res.json({ message: 'Login realizado.', nome: user.nome, token: createAccessToken(user.id) });
   } catch(e) { console.error(e); res.status(500).json({ message: 'Erro interno.' }); }
 });
 
@@ -147,7 +181,7 @@ app.post('/api/auth/register', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, sta
     req.session.userId = user.id;
     req.session.nome = user.nome;
     req.session.email = user.email;
-    res.status(201).json({ message: 'Conta criada.', nome: user.nome });
+    res.status(201).json({ message: 'Conta criada.', nome: user.nome, token: createAccessToken(user.id) });
   } catch(e) {
     if (/UNIQUE constraint failed/i.test(e.message || ''))
       return res.status(409).json({ message: 'Este e-mail já possui uma conta. Entre ou recupere sua senha.' });
@@ -156,12 +190,13 @@ app.post('/api/auth/register', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, sta
   }
 });
 
-app.get('/api/auth/me', (req, res) => {
-  if (!req.session?.userId) return res.status(401).json({ message: 'Não autenticado.' });
+app.get('/api/auth/me', auth, (req, res) => {
   res.json({ id: req.session.userId, nome: req.session.nome, email: req.session.email });
 });
 
 app.post('/api/auth/logout', (req, res) => {
+  const bearer = req.get('authorization')?.match(/^Bearer\s+(\S+)$/i)?.[1];
+  if (bearer) accessTokens.delete(bearer);
   req.session.destroy(() => { res.clearCookie('connect.sid'); res.json({ message: 'Logout.' }); });
 });
 

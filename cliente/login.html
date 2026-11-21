@@ -118,10 +118,11 @@
           body: JSON.stringify({ email, senha })
         });
         const data = await res.json();
-        if (res.ok) {
+        if (res.ok && data.token) {
+          sessionStorage.setItem('vortek_access_token', data.token);
           window.location.href = new URL('pages/dashboard.html', window.location.href).href;
         } else {
-          err.textContent = data.message || 'E-mail ou senha incorretos.';
+          err.textContent = data.message || (res.ok ? 'Não foi possível iniciar sua sessão. Tente novamente.' : 'E-mail ou senha incorretos.');
           err.classList.add('show');
           btn.disabled = false;
           btn.textContent = 'Entrar';

@@ -5,14 +5,29 @@
 
 const API = 'https://vortek-production-d724da53.up.railway.app/api';
 
+const nativeFetch = window.fetch.bind(window);
+window.fetch = (input, options = {}) => {
+  const requestUrl = typeof input === 'string' ? input : input.url;
+  if (typeof requestUrl !== 'string' || !requestUrl.startsWith(API)) {
+    return nativeFetch(input, options);
+  }
+  const token = sessionStorage.getItem('vortek_access_token');
+  if (!token) return nativeFetch(input, options);
+  const sourceHeaders = options.headers || (input instanceof Request ? input.headers : undefined);
+  const headers = new Headers(sourceHeaders);
+  headers.set('Authorization', `Bearer ${token}`);
+  return nativeFetch(input, { ...options, headers, credentials: 'omit' });
+};
+
 /* ── Verifica autenticação ao carregar ── */
 async function checkAuth() {
   try {
     const res = await fetch(`${API}/auth/me`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Não autenticado');
+    if (!res.ok) { sessionStorage.removeItem('vortek_access_token'); throw new Error('Não autenticado'); }
     const user = await res.json();
     return user;
   } catch {
+    sessionStorage.removeItem('vortek_access_token');
     window.location.href = new URL('../login.html', window.location.href).href;
     return null;
   }
@@ -20,7 +35,8 @@ async function checkAuth() {
 
 /* ── Logout ── */
 async function logout() {
-  await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
+  try { await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }); } catch {}
+  sessionStorage.removeItem('vortek_access_token');
   window.location.href = new URL('../login.html', window.location.href).href;
 }
 
