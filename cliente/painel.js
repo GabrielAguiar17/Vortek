@@ -13,7 +13,7 @@ async function checkAuth() {
     const user = await res.json();
     return user;
   } catch {
-    window.location.href = '/cliente/login.html';
+    window.location.href = new URL('../login.html', window.location.href).href;
     return null;
   }
 }
@@ -21,7 +21,7 @@ async function checkAuth() {
 /* ── Logout ── */
 async function logout() {
   await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
-  window.location.href = '/cliente/login.html';
+  window.location.href = new URL('../login.html', window.location.href).href;
 }
 
 /* ── Popula header com dados do usuário ── */
