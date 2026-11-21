@@ -245,26 +245,7 @@ async function setup() {
     CREATE TABLE IF NOT EXISTS atividades (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL REFERENCES clientes(id), texto TEXT NOT NULL, criado_em TEXT DEFAULT (datetime('now','localtime')));
   `);
 
-  const existe = db.exec("SELECT id FROM clientes WHERE email='cliente@vortek.com'");
-  if (!existe.length || !existe[0].values.length) {
-    const hash = bcrypt.hashSync('123456', 12);
-    q('INSERT INTO clientes (nome,email,senha_hash,telefone) VALUES (?,?,?,?)', ['Cliente Teste','cliente@vortek.com',hash,'(38) 99999-0000']);
-    const cid = lastId();
-    q('INSERT INTO projetos (cliente_id,nome,tipo,status,progresso,inicio,previsao) VALUES (?,?,?,?,?,?,?)', [cid,'Site Institucional','Website','Em andamento',65,'2025-01-10','2025-02-10']);
-    const pid = lastId();
-    [['Briefing',1,1],['Design',1,2],['Desenvolvimento',1,3],['Testes',0,4],['Entrega',0,5]]
-      .forEach(([n,c,o]) => q('INSERT INTO etapas (projeto_id,nome,concluida,ordem) VALUES (?,?,?,?)',[pid,n,c,o]));
-    q('INSERT INTO cobrancas (cliente_id,projeto_id,descricao,valor,status,vencimento) VALUES (?,?,?,?,?,?)',[cid,pid,'Sinal',750,'Pago','2025-01-15']);
-    q('INSERT INTO cobrancas (cliente_id,projeto_id,descricao,valor,status,vencimento) VALUES (?,?,?,?,?,?)',[cid,pid,'Saldo',750,'Pendente','2025-02-10']);
-    q('INSERT INTO tickets (cliente_id,projeto_id,titulo,mensagem,status) VALUES (?,?,?,?,?)',[cid,pid,'Dúvida sobre prazo','Quando o site estará pronto?','Respondido']);
-    const tid = lastId();
-    q('INSERT INTO ticket_mensagens (ticket_id,autor,mensagem) VALUES (?,?,?)',[tid,'vortek','Previsão para 10/02!']);
-    ['Projeto criado.','Design concluído.','Desenvolvimento concluído.','Pagamento confirmado.']
-      .forEach(t => q('INSERT INTO atividades (cliente_id,texto) VALUES (?,?)',[cid,t]));
-    console.log('✅ Cliente de teste: cliente@vortek.com / 123456');
-  } else {
-    console.log('ℹ️  Banco já configurado.');
-  }
+
 }
 
 /* ══ START ══ */
