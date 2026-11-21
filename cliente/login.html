@@ -116,7 +116,7 @@
         });
         const data = await res.json();
         if (res.ok) {
-          window.location.href = '/cliente/pages/dashboard.html';
+          window.location.href = new URL('pages/dashboard.html', window.location.href).href;
         } else {
           err.textContent = data.message || 'E-mail ou senha incorretos.';
           err.classList.add('show');
