@@ -18,6 +18,7 @@ const app  = express();
 const accessTokens = new Map();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_SITE_URL = (process.env.PUBLIC_SITE_URL || 'https://gabrielaguiar17.github.io/Vortek').replace(/\/+$/, '');
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
 const DB_PATH = path.join(__dirname, 'backend', 'database', 'vortek.db');
 
 /* ══ DB ══ */
@@ -93,6 +94,18 @@ function auth(req, res, next) {
   next();
 }
 
+function isAdminEmail(email) {
+  return Boolean(ADMIN_EMAIL && String(email || '').trim().toLowerCase() === ADMIN_EMAIL);
+}
+
+function requireAdmin(req, res, next) {
+  if (!ADMIN_EMAIL) return res.status(503).json({ message: 'Acesso administrativo ainda não configurado.' });
+  return auth(req, res, () => {
+    if (!isAdminEmail(req.session?.email)) return res.status(403).json({ message: 'Acesso restrito ao administrador.' });
+    next();
+  });
+}
+
 /* ══ APP ══ */
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
@@ -138,7 +151,7 @@ app.post('/api/auth/login', (req, res) => {
     req.session.userId = user.id;
     req.session.nome   = user.nome;
     req.session.email  = user.email;
-    res.json({ message: 'Login realizado.', nome: user.nome, token: createAccessToken(user.id) });
+    res.json({ message: 'Login realizado.', nome: user.nome, token: createAccessToken(user.id), isAdmin: isAdminEmail(user.email) });
   } catch(e) { console.error(e); res.status(500).json({ message: 'Erro interno.' }); }
 });
 
@@ -149,6 +162,8 @@ app.post('/api/auth/register', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, sta
   const senha = typeof req.body?.senha === 'string' ? req.body.senha : '';
   const confirmarSenha = typeof req.body?.confirmar_senha === 'string' ? req.body.confirmar_senha : '';
 
+  if (ADMIN_EMAIL && email === ADMIN_EMAIL)
+    return res.status(403).json({ message: 'Esta conta é reservada ao administrador. Entre pela tela de login.' });
   if (!nome || !email || !senha || !confirmarSenha)
     return res.status(400).json({ message: 'Preencha todos os campos obrigatórios.' });
   if (nome.length < 2 || nome.length > 100)
@@ -181,7 +196,7 @@ app.post('/api/auth/register', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, sta
 });
 
 app.get('/api/auth/me', auth, (req, res) => {
-  res.json({ id: req.session.userId, nome: req.session.nome, email: req.session.email });
+  res.json({ id: req.session.userId, nome: req.session.nome, email: req.session.email, isAdmin: isAdminEmail(req.session.email) });
 });
 
 app.post('/api/auth/logout', (req, res) => {
@@ -299,6 +314,187 @@ app.put('/api/perfil/senha', auth, (req, res) => {
     q('UPDATE clientes SET senha_hash=? WHERE id=?', [bcrypt.hashSync(nova_senha, 12), req.session.userId]);
     res.json({ message: 'Senha alterada!' });
   } catch(e) { res.status(500).json({ message: 'Erro.' }); }
+});
+
+/* ══ ADMINISTRADOR ══ */
+function isAdminEmail(email) {
+  return Boolean(ADMIN_EMAIL && String(email || '').trim().toLowerCase() === ADMIN_EMAIL);
+}
+
+function requireAdmin(req, res, next) {
+  auth(req, res, () => {
+    if (!ADMIN_EMAIL) return res.status(503).json({ message: 'Administrador ainda não configurado.' });
+    if (!isAdminEmail(req.session.email)) return res.status(403).json({ message: 'Acesso exclusivo do administrador.' });
+    next();
+  });
+}
+
+const adminStatusValues = ['Em andamento', 'Pausado', 'Concluído', 'Cancelado'];
+const chargeStatusValues = ['Pendente', 'Pago', 'Atrasado', 'Cancelado'];
+const ticketStatusValues = ['Aberto', 'Em andamento', 'Respondido', 'Fechado'];
+
+app.get('/api/admin/overview', requireAdmin, (req, res) => {
+  try {
+    const clientes = q('SELECT COUNT(*) AS total, SUM(CASE WHEN ativo=1 THEN 1 ELSE 0 END) AS ativos FROM clientes')[0];
+    const projetos = q('SELECT COUNT(*) AS total FROM projetos')[0];
+    const cobrancas = q("SELECT COUNT(*) AS pendentes FROM cobrancas WHERE status='Pendente'")[0];
+    const tickets = q("SELECT COUNT(*) AS abertos FROM tickets WHERE status IN ('Aberto','Em andamento')")[0];
+    res.json({ clientes: clientes.total || 0, ativos: clientes.ativos || 0, projetos: projetos.total || 0, cobrancas_pendentes: cobrancas.pendentes || 0, tickets_abertos: tickets.abertos || 0 });
+  } catch(e) { console.error('Admin overview:', e); res.status(500).json({ message: 'Erro ao carregar resumo.' }); }
+});
+
+app.get('/api/admin/clientes', requireAdmin, (req, res) => {
+  try {
+    const termo = String(req.query.busca || '').trim().slice(0, 100);
+    const like = `%${termo}%`;
+    const clientes = q(`SELECT c.id,c.nome,c.email,c.telefone,c.ativo,c.criado_em,
+      (SELECT COUNT(*) FROM projetos p WHERE p.cliente_id=c.id) AS projetos,
+      (SELECT COUNT(*) FROM tickets t WHERE t.cliente_id=c.id) AS tickets
+      FROM clientes c
+      WHERE ?='' OR lower(c.nome) LIKE lower(?) OR lower(c.email) LIKE lower(?)
+      ORDER BY c.ativo DESC,c.nome COLLATE NOCASE LIMIT 200`, [termo, like, like]);
+    res.json(clientes);
+  } catch(e) { console.error('Admin clients:', e); res.status(500).json({ message: 'Erro ao carregar clientes.' }); }
+});
+
+app.post('/api/admin/clientes', requireAdmin, (req, res) => {
+  const nome = typeof req.body?.nome === 'string' ? req.body.nome.trim() : '';
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const telefone = typeof req.body?.telefone === 'string' ? req.body.telefone.trim() : '';
+  const senha = typeof req.body?.senha === 'string' ? req.body.senha : '';
+  if (!nome || nome.length < 2 || nome.length > 100) return res.status(400).json({ message: 'Informe um nome entre 2 e 100 caracteres.' });
+  if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ message: 'Informe um e-mail válido.' });
+  if (telefone.length > 30) return res.status(400).json({ message: 'O telefone deve ter no máximo 30 caracteres.' });
+  if (senha.length < 8 || Buffer.byteLength(senha, 'utf8') > 72) return res.status(400).json({ message: 'A senha inicial deve ter pelo menos 8 caracteres.' });
+  if (isAdminEmail(email)) return res.status(400).json({ message: 'O e-mail do administrador não pode ser usado para criar um cliente.' });
+  try {
+    if (q('SELECT id FROM clientes WHERE lower(email)=lower(?)', [email])[0]) return res.status(409).json({ message: 'Este e-mail já possui uma conta.' });
+    q('INSERT INTO clientes (nome,email,senha_hash,telefone) VALUES (?,?,?,?)', [nome, email, bcrypt.hashSync(senha, 12), telefone || null]);
+    const cliente = q('SELECT id,nome,email,telefone,ativo,criado_em FROM clientes WHERE email=?', [email])[0];
+    res.status(201).json(cliente);
+  } catch(e) {
+    if (/UNIQUE constraint failed/i.test(e.message || '')) return res.status(409).json({ message: 'Este e-mail já possui uma conta.' });
+    console.error('Admin create client:', e); res.status(500).json({ message: 'Erro ao criar cliente.' });
+  }
+});
+
+app.get('/api/admin/clientes/:id', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ message: 'Cliente inválido.' });
+  try {
+    const cliente = q('SELECT id,nome,email,telefone,ativo,criado_em FROM clientes WHERE id=?', [id])[0];
+    if (!cliente) return res.status(404).json({ message: 'Cliente não encontrado.' });
+    cliente.projetos = q('SELECT id,nome,tipo,status,progresso,inicio,previsao,criado_em FROM projetos WHERE cliente_id=? ORDER BY criado_em DESC', [id]);
+    cliente.cobrancas = q('SELECT c.id,c.projeto_id,c.descricao,c.valor,c.status,c.vencimento,c.pago_em,p.nome AS projeto FROM cobrancas c LEFT JOIN projetos p ON p.id=c.projeto_id WHERE c.cliente_id=? ORDER BY c.criado_em DESC', [id]);
+    cliente.tickets = q(`SELECT t.id,t.projeto_id,t.titulo,t.mensagem,t.status,t.criado_em,
+      (SELECT mensagem FROM ticket_mensagens m WHERE m.ticket_id=t.id ORDER BY m.criado_em DESC LIMIT 1) AS ultima_mensagem
+      FROM tickets t WHERE t.cliente_id=? ORDER BY t.criado_em DESC`, [id]);
+    cliente.arquivos = q('SELECT a.id,a.nome,a.tamanho,a.tipo,a.enviado_em,p.nome AS projeto FROM arquivos a JOIN projetos p ON p.id=a.projeto_id WHERE p.cliente_id=? ORDER BY a.enviado_em DESC', [id]);
+    res.json(cliente);
+  } catch(e) { console.error('Admin client detail:', e); res.status(500).json({ message: 'Erro ao carregar ficha do cliente.' }); }
+});
+
+app.put('/api/admin/clientes/:id', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const nome = typeof req.body?.nome === 'string' ? req.body.nome.trim() : '';
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const telefone = typeof req.body?.telefone === 'string' ? req.body.telefone.trim() : '';
+  const ativo = req.body?.ativo === false || req.body?.ativo === 0 ? 0 : 1;
+  if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ message: 'Cliente inválido.' });
+  if (!nome || nome.length < 2 || nome.length > 100) return res.status(400).json({ message: 'Informe um nome entre 2 e 100 caracteres.' });
+  if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ message: 'Informe um e-mail válido.' });
+  if (telefone.length > 30) return res.status(400).json({ message: 'O telefone deve ter no máximo 30 caracteres.' });
+  try {
+    const atual = q('SELECT id,email FROM clientes WHERE id=?', [id])[0];
+    if (!atual) return res.status(404).json({ message: 'Cliente não encontrado.' });
+    if (isAdminEmail(atual.email) && email !== ADMIN_EMAIL) return res.status(400).json({ message: 'O e-mail do administrador é gerenciado na configuração do Railway.' });
+    if (isAdminEmail(atual.email) && !ativo) return res.status(400).json({ message: 'Não é possível desativar a conta do administrador.' });
+    if (q('SELECT id FROM clientes WHERE lower(email)=lower(?) AND id<>?', [email, id])[0]) return res.status(409).json({ message: 'Este e-mail já pertence a outra conta.' });
+    q('UPDATE clientes SET nome=?,email=?,telefone=?,ativo=? WHERE id=?', [nome, email, telefone || null, ativo, id]);
+    res.json({ message: 'Cliente atualizado.' });
+  } catch(e) {
+    if (/UNIQUE constraint failed/i.test(e.message || '')) return res.status(409).json({ message: 'Este e-mail já pertence a outra conta.' });
+    console.error('Admin update client:', e); res.status(500).json({ message: 'Erro ao atualizar cliente.' });
+  }
+});
+
+app.post('/api/admin/clientes/:id/projetos', requireAdmin, (req, res) => {
+  const clienteId = Number(req.params.id);
+  const nome = typeof req.body?.nome === 'string' ? req.body.nome.trim() : '';
+  const tipo = typeof req.body?.tipo === 'string' ? req.body.tipo.trim() : '';
+  const status = adminStatusValues.includes(req.body?.status) ? req.body.status : 'Em andamento';
+  const progresso = Number(req.body?.progresso ?? 0);
+  const inicio = typeof req.body?.inicio === 'string' ? req.body.inicio : '';
+  const previsao = typeof req.body?.previsao === 'string' ? req.body.previsao : '';
+  if (!Number.isSafeInteger(clienteId) || clienteId < 1 || !q('SELECT id FROM clientes WHERE id=?', [clienteId])[0]) return res.status(404).json({ message: 'Cliente não encontrado.' });
+  if (!nome || nome.length > 150 || !Number.isInteger(progresso) || progresso < 0 || progresso > 100) return res.status(400).json({ message: 'Confira o nome e o progresso (0 a 100%).' });
+  try {
+    q('INSERT INTO projetos (cliente_id,nome,tipo,status,progresso,inicio,previsao) VALUES (?,?,?,?,?,?,?)', [clienteId,nome,tipo||null,status,progresso,inicio||null,previsao||null]);
+    res.status(201).json({ id:lastId(), message:'Projeto criado.' });
+  } catch(e) { console.error('Admin create project:', e); res.status(500).json({ message:'Erro ao criar projeto.' }); }
+});
+
+app.put('/api/admin/projetos/:id', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const nome = typeof req.body?.nome === 'string' ? req.body.nome.trim() : '';
+  const tipo = typeof req.body?.tipo === 'string' ? req.body.tipo.trim() : '';
+  const status = req.body?.status;
+  const progresso = Number(req.body?.progresso);
+  const inicio = typeof req.body?.inicio === 'string' ? req.body.inicio : '';
+  const previsao = typeof req.body?.previsao === 'string' ? req.body.previsao : '';
+  if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ message:'Projeto inválido.' });
+  if (!nome || nome.length > 150 || !adminStatusValues.includes(status) || !Number.isInteger(progresso) || progresso < 0 || progresso > 100) return res.status(400).json({ message:'Confira os dados do projeto.' });
+  try {
+    if (!q('SELECT id FROM projetos WHERE id=?', [id])[0]) return res.status(404).json({ message:'Projeto não encontrado.' });
+    q('UPDATE projetos SET nome=?,tipo=?,status=?,progresso=?,inicio=?,previsao=? WHERE id=?', [nome,tipo||null,status,progresso,inicio||null,previsao||null,id]);
+    res.json({ message:'Projeto atualizado.' });
+  } catch(e) { console.error('Admin update project:', e); res.status(500).json({ message:'Erro ao atualizar projeto.' }); }
+});
+
+app.post('/api/admin/clientes/:id/cobrancas', requireAdmin, (req, res) => {
+  const clienteId = Number(req.params.id);
+  const projetoId = req.body?.projeto_id ? Number(req.body.projeto_id) : null;
+  const descricao = typeof req.body?.descricao === 'string' ? req.body.descricao.trim() : '';
+  const valor = Number(req.body?.valor);
+  const vencimento = typeof req.body?.vencimento === 'string' ? req.body.vencimento : '';
+  if (!Number.isSafeInteger(clienteId) || clienteId < 1 || !q('SELECT id FROM clientes WHERE id=?', [clienteId])[0]) return res.status(404).json({ message:'Cliente não encontrado.' });
+  if (!descricao || descricao.length > 200 || !Number.isFinite(valor) || valor <= 0) return res.status(400).json({ message:'Informe uma descrição e um valor válido.' });
+  if (projetoId && !q('SELECT id FROM projetos WHERE id=? AND cliente_id=?', [projetoId,clienteId])[0]) return res.status(400).json({ message:'O projeto não pertence a este cliente.' });
+  try {
+    q('INSERT INTO cobrancas (cliente_id,projeto_id,descricao,valor,status,vencimento) VALUES (?,?,?,?,?,?)', [clienteId,projetoId,descricao,valor,'Pendente',vencimento||null]);
+    res.status(201).json({ message:'Cobrança criada.' });
+  } catch(e) { console.error('Admin create charge:', e); res.status(500).json({ message:'Erro ao criar cobrança.' }); }
+});
+
+app.put('/api/admin/cobrancas/:id', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const status = req.body?.status;
+  if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ message:'Cobrança inválida.' });
+  if (!chargeStatusValues.includes(status)) return res.status(400).json({ message:'Status inválido.' });
+  try {
+    if (!q('SELECT id FROM cobrancas WHERE id=?', [id])[0]) return res.status(404).json({ message:'Cobrança não encontrada.' });
+    const pagoEm = status === 'Pago' ? new Date().toISOString().slice(0,19).replace('T',' ') : null;
+    q('UPDATE cobrancas SET status=?,pago_em=? WHERE id=?', [status,pagoEm,id]);
+    res.json({ message:'Cobrança atualizada.' });
+  } catch(e) { console.error('Admin update charge:', e); res.status(500).json({ message:'Erro ao atualizar cobrança.' }); }
+});
+
+app.put('/api/admin/tickets/:id', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const status = req.body?.status;
+  const resposta = typeof req.body?.resposta === 'string' ? req.body.resposta.trim() : '';
+  if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ message:'Chamado inválido.' });
+  if (!ticketStatusValues.includes(status) || resposta.length > 5000) return res.status(400).json({ message:'Confira o status e a resposta.' });
+  try {
+    const ticket = q('SELECT id,cliente_id,titulo FROM tickets WHERE id=?', [id])[0];
+    if (!ticket) return res.status(404).json({ message:'Chamado não encontrado.' });
+    q('UPDATE tickets SET status=? WHERE id=?', [status,id]);
+    if (resposta) {
+      q('INSERT INTO ticket_mensagens (ticket_id,autor,mensagem) VALUES (?,?,?)', [id,'vortek',resposta]);
+      q('INSERT INTO atividades (cliente_id,texto) VALUES (?,?)', [ticket.cliente_id,`Resposta no chamado: ${ticket.titulo}`]);
+    }
+    res.json({ message:'Chamado atualizado.' });
+  } catch(e) { console.error('Admin update ticket:', e); res.status(500).json({ message:'Erro ao atualizar chamado.' }); }
 });
 
 /* ══ STATIC (por último, apenas arquivos que existem) ══ */

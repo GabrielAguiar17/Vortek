@@ -126,7 +126,9 @@
         const data = await res.json();
         if (res.ok && data.token) {
           sessionStorage.setItem('vortek_access_token', data.token);
-          window.location.href = new URL('pages/dashboard.html', window.location.href).href;
+          window.location.href = data.isAdmin
+            ? new URL('../admin/', window.location.href).href
+            : new URL('pages/dashboard.html', window.location.href).href;
         } else {
           err.textContent = data.message || (res.ok ? 'Não foi possível iniciar sua sessão. Tente novamente.' : 'E-mail ou senha incorretos.');
           err.classList.add('show');

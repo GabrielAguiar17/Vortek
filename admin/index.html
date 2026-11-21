@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Administração — Vortek</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{color-scheme:dark;--bg:#050810;--surface:#0a1222;--surface2:#0e192d;--border:rgba(79,142,247,.18);--blue:#4f8ef7;--text:#e8edf8;--muted:#8799b8;--red:#e07070;--green:#70d69b}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
+    header{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;border-bottom:1px solid var(--border);background:rgba(10,18,34,.9)}
+    .brand{display:flex;align-items:center;gap:14px;font-weight:800;letter-spacing:.08em}.brand img{height:30px}
+    nav{display:flex;align-items:center;gap:18px;font-size:.85rem}a{color:var(--blue);text-decoration:none}button{font:inherit}
+    .btn{border:1px solid var(--border);background:#12213a;color:var(--text);padding:10px 14px;border-radius:9px;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.danger{color:#ff9d9d}.btn.small{padding:7px 10px;font-size:.78rem}
+    main{max-width:1440px;margin:auto;padding:28px 5vw 60px}
+    h1{font-size:1.65rem;margin:0 0 8px}h2{font-size:1.03rem;margin:0 0 16px}h3{font-size:.9rem;margin:0 0 12px}
+    p{margin:0}.muted{color:var(--muted);font-size:.84rem}
+    .head-row{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+    .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px 0}
+    .metric,.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px}
+    .metric strong{display:block;font-size:1.5rem;margin-top:8px}.metric span{font-size:.75rem;color:var(--muted)}
+    .workspace{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
+    .client-sidebar{position:sticky;top:16px}.search{width:100%;margin:10px 0 12px}
+    input,select,textarea{width:100%;background:#07101e;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 11px;font:inherit;font-size:.84rem;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--blue)}label{display:block;font-size:.74rem;color:var(--muted);font-weight:600;margin-bottom:6px}
+    .field{margin-bottom:12px}.client-list{display:flex;flex-direction:column;gap:7px;max-height:65vh;overflow:auto}
+    .client-item{text-align:left;border:1px solid transparent;background:var(--surface2);color:var(--text);border-radius:9px;padding:11px;cursor:pointer}
+    .client-item.selected{border-color:var(--blue);background:rgba(79,142,247,.12)}.client-item strong{display:block;font-size:.83rem;overflow-wrap:anywhere}
+    .client-item span{font-size:.72rem;color:var(--muted)}.pill{font-size:.68rem;border-radius:99px;padding:3px 8px;background:#23334b;color:#b7c8e5}
+    .pill.off{background:#3c2026;color:#ff9d9d}.detail-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px}
+    .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .section{border-top:1px solid var(--border);padding-top:20px;margin-top:22px}.inline-form{display:grid;grid-template-columns:2fr 1.4fr .7fr auto;gap:8px;align-items:end;margin-bottom:14px}
+    .project-row,.charge-row,.ticket-row,.file-row{border:1px solid var(--border);background:#08111f;border-radius:10px;padding:12px;margin:9px 0}
+    .project-edit{display:grid;grid-template-columns:1.6fr 1fr .75fr .85fr auto;gap:8px;align-items:end}
+    .charge-edit{display:grid;grid-template-columns:1.5fr .8fr auto;gap:8px;align-items:end}
+    .ticket-edit{display:grid;grid-template-columns:1fr .8fr;gap:9px;align-items:start}.ticket-edit textarea{min-height:72px;resize:vertical}
+    .ticket-edit .reply{grid-column:1/-1}.row-title{font-weight:700;font-size:.84rem;margin-bottom:8px}
+    .status{min-height:20px;font-size:.8rem;color:var(--muted);margin:10px 0}.status.error{color:var(--red)}.status.success{color:var(--green)}
+    .empty{border:1px dashed var(--border);border-radius:9px;padding:18px;color:var(--muted);font-size:.83rem;text-align:center}
+    .hidden{display:none!important}.checkrow{display:flex;align-items:center;gap:8px;margin:6px 0 14px}.checkrow input{width:auto}
+    dialog{width:min(460px,calc(100vw - 28px));border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);padding:24px}
+    dialog::backdrop{background:rgba(0,0,0,.72)}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+    @media(max-width:900px){.workspace{grid-template-columns:1fr}.client-sidebar{position:static}.client-list{max-height:260px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:600px){header{padding:0 16px}.brand img{height:26px}nav{gap:10px}nav .admin-label{display:none}main{padding:22px 14px 44px}.head-row{align-items:flex-start;flex-direction:column}.grid2{grid-template-columns:1fr}.inline-form,.project-edit,.charge-edit,.ticket-edit{grid-template-columns:1fr}.ticket-edit .reply{grid-column:auto}}
+  </style>
+  <script>if(location.hostname==='gabrielaguiar17.github.io')location.replace('https://vortek-production-d724da53.up.railway.app/admin/');</script>
+</head>
+<body>
+  <header>
+    <div class="brand"><img src="../logo.svg" alt="Vortek"/> <span>ADMINISTRAÇÃO</span></div>
+    <nav><a href="../cliente/pages/dashboard.html">Área do cliente</a><button class="btn small" id="logout">Sair</button></nav>
+  </header>
+  <main>
+    <div class="head-row"><div><h1>Gestão de clientes</h1><p class="muted">Clientes, projetos, cobranças e chamados em um só lugar.</p></div><button class="btn primary" id="new-client">+ Novo cliente</button></div>
+    <div id="access-status" class="status">Validando acesso...</div>
+    <section id="admin-app" class="hidden">
+      <div class="metrics">
+        <div class="metric"><span>Clientes ativos</span><strong id="m-active">—</strong></div>
+        <div class="metric"><span>Total de clientes</span><strong id="m-clients">—</strong></div>
+        <div class="metric"><span>Projetos</span><strong id="m-projects">—</strong></div>
+        <div class="metric"><span>Cobranças pendentes · chamados abertos</span><strong id="m-open">—</strong></div>
+      </div>
+      <div class="workspace">
+        <aside class="card client-sidebar">
+          <h2>Clientes</h2>
+          <input id="search" class="search" type="search" placeholder="Buscar por nome ou e-mail"/>
+          <div id="client-list" class="client-list"><div class="empty">Carregando...</div></div>
+        </aside>
+        <section class="card" id="detail">
+          <div id="no-client" class="empty">Selecione um cliente para ver e editar os dados.</div>
+          <div id="client-detail" class="hidden">
+            <div class="detail-head"><div><h2 id="detail-name">Cliente</h2><p id="detail-meta" class="muted"></p></div><span id="active-pill" class="pill"></span></div>
+            <form id="client-form">
+              <div class="grid2">
+                <div class="field"><label for="client-name">Nome</label><input id="client-name" maxlength="100" required/></div>
+                <div class="field"><label for="client-email">E-mail</label><input id="client-email" type="email" maxlength="254" required/></div>
+                <div class="field"><label for="client-phone">Telefone</label><input id="client-phone" maxlength="30"/></div>
+                <div class="field checkrow"><input id="client-active" type="checkbox"/><label for="client-active">Conta ativa</label></div>
+              </div>
+              <button class="btn primary" type="submit">Salvar dados do cliente</button>
+            </form>
+            <section class="section">
+              <h2>Projetos</h2>
+              <form id="project-form" class="inline-form">
+                <div class="field"><label for="project-name">Novo projeto</label><input id="project-name" maxlength="150" placeholder="Nome do projeto" required/></div>
+                <div class="field"><label for="project-type">Tipo</label><input id="project-type" maxlength="80" placeholder="Website"/></div>
+                <div class="field"><label for="project-progress">Progresso</label><input id="project-progress" type="number" min="0" max="100" value="0" required/></div>
+                <button class="btn primary" type="submit">Adicionar</button>
+              </form>
+              <div id="project-list"></div>
+            </section>
+            <section class="section">
+              <h2>Cobranças</h2>
+              <form id="charge-form" class="inline-form">
+                <div class="field"><label for="charge-desc">Descrição</label><input id="charge-desc" maxlength="200" required/></div>
+                <div class="field"><label for="charge-value">Valor (R$)</label><input id="charge-value" type="number" step="0.01" min="0.01" required/></div>
+                <div class="field"><label for="charge-date">Vencimento</label><input id="charge-date" type="date"/></div>
+                <button class="btn primary" type="submit">Adicionar</button>
+              </form>
+              <div id="charge-list"></div>
+            </section>
+            <section class="section">
+              <h2>Chamados de suporte</h2>
+              <div id="ticket-list"></div>
+            </section>
+            <section class="section">
+              <h2>Arquivos do cliente</h2>
+              <div id="file-list"></div>
+            </section>
+          </div>
+        </section>
+      </div>
+      <div id="page-status" class="status" role="status"></div>
+    </section>
+  </main>
+  <dialog id="client-dialog">
+    <form id="create-client-form">
+      <h2>Novo cliente</h2>
+      <p class="muted" style="margin-bottom:18px">Crie o acesso e envie a senha inicial ao cliente por um canal seguro.</p>
+      <div class="field"><label for="new-name">Nome completo</label><input id="new-name" required minlength="2" maxlength="100"/></div>
+      <div class="field"><label for="new-email">E-mail</label><input id="new-email" type="email" required maxlength="254"/></div>
+      <div class="field"><label for="new-phone">Telefone (opcional)</label><input id="new-phone" maxlength="30"/></div>
+      <div class="field"><label for="new-password">Senha inicial</label><input id="new-password" type="password" required minlength="8" maxlength="72" autocomplete="new-password"/></div>
+      <div class="dialog-actions"><button class="btn" type="button" id="cancel-create">Cancelar</button><button class="btn primary" type="submit">Criar cliente</button></div>
+    </form>
+  </dialog>
+  <script src="./admin.js"></script>
+</body>
+</html>
