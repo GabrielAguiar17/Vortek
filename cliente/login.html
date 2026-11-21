@@ -43,6 +43,12 @@
     .register-link{text-align:center;margin-top:22px;padding-top:18px;border-top:1px solid var(--border);font-size:0.82rem;color:var(--muted)}
     .register-link a{color:var(--blue);text-decoration:none;font-weight:600}
   </style>
+<script>
+    if (window.location.hostname === 'gabrielaguiar17.github.io') {
+      const path = window.location.pathname.replace(/^\/Vortek(?=\/|$)/, '') || '/cliente/login.html';
+      window.location.replace(`https://vortek-production-d724da53.up.railway.app${path}${window.location.search}${window.location.hash}`);
+    }
+  </script>
 </head>
 <body>
   <canvas id="cv"></canvas>

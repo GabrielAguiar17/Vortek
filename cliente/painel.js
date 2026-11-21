@@ -3,6 +3,12 @@
    Lógica compartilhada do painel do cliente
 ═══════════════════════════════════════ */
 
+const REDIRECTING_FROM_PAGES = window.location.hostname === 'gabrielaguiar17.github.io';
+if (REDIRECTING_FROM_PAGES) {
+  const path = window.location.pathname.replace(/^\/Vortek(?=\/|$)/, '');
+  window.location.replace(`https://vortek-production-d724da53.up.railway.app${path}${window.location.search}${window.location.hash}`);
+}
+
 const API = 'https://vortek-production-d724da53.up.railway.app/api';
 
 const nativeFetch = window.fetch.bind(window);
@@ -21,6 +27,7 @@ window.fetch = (input, options = {}) => {
 
 /* ── Verifica autenticação ao carregar ── */
 async function checkAuth() {
+  if (REDIRECTING_FROM_PAGES) return null;
   try {
     const res = await fetch(`${API}/auth/me`, { credentials: 'include' });
     if (!res.ok) { sessionStorage.removeItem('vortek_access_token'); throw new Error('Não autenticado'); }
