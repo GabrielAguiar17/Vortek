@@ -15,6 +15,7 @@ const initSqlJs  = require('sql.js');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+const PUBLIC_SITE_URL = (process.env.PUBLIC_SITE_URL || 'https://gabrielaguiar17.github.io/Vortek').replace(/\/+$/, '');
 const DB_PATH = path.join(__dirname, 'backend', 'database', 'vortek.db');
 
 /* ══ DB ══ */
@@ -83,6 +84,11 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
+
+/* Redireciona as telas do cliente para o GitHub Pages. O Railway hospeda a API. */
+app.use('/cliente', (req, res) => {
+  res.redirect(302, `${PUBLIC_SITE_URL}${req.originalUrl}`);
+});
 
 /* ══ ROTAS API ══ */
 
