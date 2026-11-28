@@ -21,6 +21,7 @@ const accessTokens = new Map();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_SITE_URL = (process.env.PUBLIC_SITE_URL || 'https://gabrielaguiar17.github.io/Vortek').replace(/\/+$/, '');
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const ADMIN_EMAILS = [...new Set([ADMIN_EMAIL, ...(process.env.ADMIN_EMAILS || '').split(',')].map(email => email.trim().toLowerCase()).filter(Boolean))];
 const AUTH_PUBLIC_URL = (process.env.AUTH_PUBLIC_URL || 'https://vorteksystems.up.railway.app').replace(/\/+$/, '');
 const DB_PATH = path.join(__dirname, 'backend', 'database', 'vortek.db');
 
@@ -98,11 +99,11 @@ function auth(req, res, next) {
 }
 
 function isAdminEmail(email) {
-  return Boolean(ADMIN_EMAIL && String(email || '').trim().toLowerCase() === ADMIN_EMAIL);
+  return ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
 }
 
 function requireAdmin(req, res, next) {
-  if (!ADMIN_EMAIL) return res.status(503).json({ message: 'Acesso administrativo ainda não configurado.' });
+  if (!ADMIN_EMAILS.length) return res.status(503).json({ message: 'Acesso administrativo ainda não configurado.' });
   return auth(req, res, () => {
     if (!isAdminEmail(req.session?.email)) return res.status(403).json({ message: 'Acesso restrito ao administrador.' });
     next();
@@ -165,7 +166,7 @@ app.post('/api/auth/register', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, sta
   const senha = typeof req.body?.senha === 'string' ? req.body.senha : '';
   const confirmarSenha = typeof req.body?.confirmar_senha === 'string' ? req.body.confirmar_senha : '';
 
-  if (ADMIN_EMAIL && email === ADMIN_EMAIL)
+  if (isAdminEmail(email))
     return res.status(403).json({ message: 'Esta conta é reservada ao administrador. Entre pela tela de login.' });
   if (!nome || !email || !senha || !confirmarSenha)
     return res.status(400).json({ message: 'Preencha todos os campos obrigatórios.' });
@@ -407,12 +408,12 @@ app.put('/api/perfil/senha', auth, (req, res) => {
 
 /* ══ ADMINISTRADOR ══ */
 function isAdminEmail(email) {
-  return Boolean(ADMIN_EMAIL && String(email || '').trim().toLowerCase() === ADMIN_EMAIL);
+  return ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
 }
 
 function requireAdmin(req, res, next) {
   auth(req, res, () => {
-    if (!ADMIN_EMAIL) return res.status(503).json({ message: 'Administrador ainda não configurado.' });
+    if (!ADMIN_EMAILS.length) return res.status(503).json({ message: 'Administrador ainda não configurado.' });
     if (!isAdminEmail(req.session.email)) return res.status(403).json({ message: 'Acesso exclusivo do administrador.' });
     next();
   });
@@ -496,7 +497,7 @@ app.put('/api/admin/clientes/:id', requireAdmin, (req, res) => {
   try {
     const atual = q('SELECT id,email FROM clientes WHERE id=?', [id])[0];
     if (!atual) return res.status(404).json({ message: 'Cliente não encontrado.' });
-    if (isAdminEmail(atual.email) && email !== ADMIN_EMAIL) return res.status(400).json({ message: 'O e-mail do administrador é gerenciado na configuração do Railway.' });
+    if (isAdminEmail(atual.email) && !isAdminEmail(email)) return res.status(400).json({ message: 'O e-mail do administrador é gerenciado na configuração do Railway.' });
     if (isAdminEmail(atual.email) && !ativo) return res.status(400).json({ message: 'Não é possível desativar a conta do administrador.' });
     if (q('SELECT id FROM clientes WHERE lower(email)=lower(?) AND id<>?', [email, id])[0]) return res.status(409).json({ message: 'Este e-mail já pertence a outra conta.' });
     q('UPDATE clientes SET nome=?,email=?,telefone=?,ativo=? WHERE id=?', [nome, email, telefone || null, ativo, id]);
