@@ -243,7 +243,7 @@
     async function loadProgresso() {
       const wrap = document.getElementById('progresso-wrap');
       try {
-        const res = await fetch('https://vortek-production-d724da53.up.railway.app/api/projetos', {
+        const res = await fetch('https://vorteksystems.up.railway.app/api/projetos', {
           credentials: 'include' });
         if (!res.ok) throw new Error();
         const projetos = await res.json();
@@ -259,7 +259,7 @@
         // Carrega etapas de cada projeto em paralelo
         const detalhes = await Promise.all(
           projetos.map(p =>
-            fetch(`https://vortek-production-d724da53.up.railway.app/api/projetos/${p.id}`, { credentials: 'include' })
+            fetch(`https://vorteksystems.up.railway.app/api/projetos/${p.id}`, { credentials: 'include' })
               .then(r => r.ok ? r.json() : { ...p, etapas: [] })
               .catch(() => ({ ...p, etapas: [] }))
           )

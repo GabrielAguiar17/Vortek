@@ -32,7 +32,7 @@
 <script>
     if (window.location.hostname === 'gabrielaguiar17.github.io') {
       const path = window.location.pathname.replace(/^\/Vortek(?=\/|$)/, '') || '/cliente/login.html';
-      window.location.replace(`https://vortek-production-d724da53.up.railway.app${path}${window.location.search}${window.location.hash}`);
+      window.location.replace(`https://vorteksystems.up.railway.app${path}${window.location.search}${window.location.hash}`);
     }
   </script>
 </head>
@@ -76,7 +76,7 @@
       if(senha!==confirmar_senha){err.textContent='As senhas não coincidem.';err.classList.add('show');return}
       btn.disabled=true;btn.textContent='Criando conta...';
       try{
-        const res=await fetch('https://vortek-production-d724da53.up.railway.app/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,email,telefone,senha,confirmar_senha})});
+        const res=await fetch('https://vorteksystems.up.railway.app/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,email,telefone,senha,confirmar_senha})});
         const data=await res.json();
         if(!res.ok||!data.token){err.textContent=data.message||(res.ok?'Não foi possível iniciar sua sessão. Tente novamente.':'Não foi possível criar sua conta.');err.classList.add('show');btn.disabled=false;btn.textContent='Criar conta';return}
         sessionStorage.setItem('vortek_access_token',data.token);

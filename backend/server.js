@@ -97,7 +97,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
   origin: [
     'https://gabrielaguiar17.github.io',
-    'https://vortek-production-d724da53.up.railway.app',
+    'https://vorteksystems.up.railway.app',
     'http://localhost:3000',
   ],
   credentials: true,

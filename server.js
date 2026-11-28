@@ -21,7 +21,7 @@ const accessTokens = new Map();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_SITE_URL = (process.env.PUBLIC_SITE_URL || 'https://gabrielaguiar17.github.io/Vortek').replace(/\/+$/, '');
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
-const AUTH_PUBLIC_URL = (process.env.AUTH_PUBLIC_URL || 'https://vortek-production-d724da53.up.railway.app').replace(/\/+$/, '');
+const AUTH_PUBLIC_URL = (process.env.AUTH_PUBLIC_URL || 'https://vorteksystems.up.railway.app').replace(/\/+$/, '');
 const DB_PATH = path.join(__dirname, 'backend', 'database', 'vortek.db');
 
 /* ══ DB ══ */
@@ -114,7 +114,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
   origin: [
     'https://gabrielaguiar17.github.io',
-    'https://vortek-production-d724da53.up.railway.app',
+    'https://vorteksystems.up.railway.app',
     'http://localhost:3000',
   ],
   credentials: true,

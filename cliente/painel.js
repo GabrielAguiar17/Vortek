@@ -6,10 +6,10 @@
 const REDIRECTING_FROM_PAGES = window.location.hostname === 'gabrielaguiar17.github.io';
 if (REDIRECTING_FROM_PAGES) {
   const path = window.location.pathname.replace(/^\/Vortek(?=\/|$)/, '');
-  window.location.replace(`https://vortek-production-d724da53.up.railway.app${path}${window.location.search}${window.location.hash}`);
+  window.location.replace(`https://vorteksystems.up.railway.app${path}${window.location.search}${window.location.hash}`);
 }
 
-const API = 'https://vortek-production-d724da53.up.railway.app/api';
+const API = 'https://vorteksystems.up.railway.app/api';
 
 const nativeFetch = window.fetch.bind(window);
 window.fetch = (input, options = {}) => {

@@ -170,7 +170,7 @@
     async function loadProjetos() {
       const grid = document.getElementById('projetos-grid');
       try {
-        const res = await fetch('https://vortek-production-d724da53.up.railway.app/api/projetos', {
+        const res = await fetch('https://vorteksystems.up.railway.app/api/projetos', {
           credentials: 'include' });
         if (!res.ok) throw new Error('Falha ao buscar projetos');
         const projetos = await res.json();
@@ -227,7 +227,7 @@
 
       if (!wasExpanded && etapasEl.dataset.loaded !== 'true') {
         try {
-          const res = await fetch(`https://vortek-production-d724da53.up.railway.app/api/projetos/${id}`, { credentials: 'include' });
+          const res = await fetch(`https://vorteksystems.up.railway.app/api/projetos/${id}`, { credentials: 'include' });
           if (!res.ok) throw new Error();
           const projeto = await res.json();
           const etapas = projeto.etapas || [];

@@ -201,7 +201,7 @@
     async function loadArquivos() {
       const el = document.getElementById('arquivos-list');
       try {
-        const res = await fetch('https://vortek-production-d724da53.up.railway.app/api/arquivos', {
+        const res = await fetch('https://vorteksystems.up.railway.app/api/arquivos', {
           credentials: 'include' });
         if (!res.ok) throw new Error();
         todosArquivos = await res.json();
