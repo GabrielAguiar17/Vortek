@@ -235,7 +235,8 @@ app.post('/api/auth/forgot-password', passwordRecoveryLimiter, async (req, res) 
           const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ from: process.env.MAIL_FROM, to: [user.email], subject: 'Redefina sua senha | Vortek', text, html })
+            body: JSON.stringify({ from: process.env.MAIL_FROM, to: [user.email], subject: 'Redefina sua senha | Vortek', text, html }),
+            signal: AbortSignal.timeout(12000)
           });
           if (!response.ok) throw new Error(`Resend HTTP ${response.status}: ${(await response.text()).slice(0,300)}`);
         } else {
@@ -243,7 +244,8 @@ app.post('/api/auth/forgot-password', passwordRecoveryLimiter, async (req, res) 
             host: process.env.SMTP_HOST || 'smtp.gmail.com',
             port: Number(process.env.SMTP_PORT) || 465,
             secure: process.env.SMTP_SECURE ? String(process.env.SMTP_SECURE).toLowerCase() === 'true' : (Number(process.env.SMTP_PORT) || 465) === 465,
-            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+            connectionTimeout: 12000, greetingTimeout: 12000, socketTimeout: 15000
           });
           await transporter.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to: user.email, subject: 'Redefina sua senha | Vortek', text, html });
         }
@@ -255,7 +257,7 @@ app.post('/api/auth/forgot-password', passwordRecoveryLimiter, async (req, res) 
     res.json(generic);
   } catch (e) {
     console.error('Password recovery email failed:', e?.message || e);
-    res.json(generic);
+    res.status(503).json({ message: 'O serviço de e-mail está indisponível no momento. Tente novamente mais tarde.' });
   }
 });
 
