@@ -159,6 +159,34 @@ app.post('/api/auth/login', (req, res) => {
   } catch(e) { console.error(e); res.status(500).json({ message: 'Erro interno.' }); }
 });
 
+let adminBootstrapUsed = false;
+app.post('/api/admin/bootstrap', rateLimit({ windowMs: 15 * 60 * 1000, max: 3, standardHeaders: true, legacyHeaders: false }), (req, res) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+  const nome = typeof req.body?.nome === 'string' ? req.body.nome.trim() : '';
+  const senha = typeof req.body?.senha === 'string' ? req.body.senha : '';
+  const supplied = Buffer.from(typeof req.body?.token === 'string' ? req.body.token : '');
+  const configured = Buffer.from(process.env.ADMIN_BOOTSTRAP_TOKEN || '');
+  const tokenValid = configured.length >= 32 && supplied.length === configured.length && crypto.timingSafeEqual(supplied, configured);
+
+  if (!tokenValid || adminBootstrapUsed) return res.status(404).json({ message: 'Não encontrado.' });
+  if (!isAdminEmail(email)) return res.status(403).json({ message: 'E-mail não autorizado como administrador.' });
+  if (nome.length < 2 || nome.length > 100) return res.status(400).json({ message: 'Informe um nome entre 2 e 100 caracteres.' });
+  if (senha.length < 8 || Buffer.byteLength(senha, 'utf8') > 72) return res.status(400).json({ message: 'A senha deve ter entre 8 e 72 bytes.' });
+
+  try {
+    const hash = bcrypt.hashSync(senha, 12);
+    const existing = q('SELECT id FROM clientes WHERE lower(email)=?', [email])[0];
+    if (existing) q('UPDATE clientes SET nome=?,email=?,senha_hash=?,ativo=1 WHERE id=?', [nome,email,hash,existing.id]);
+    else q('INSERT INTO clientes (nome,email,senha_hash,telefone) VALUES (?,?,?,NULL)', [nome,email,hash]);
+    adminBootstrapUsed = true;
+    process.env.ADMIN_BOOTSTRAP_TOKEN = '';
+    res.status(existing ? 200 : 201).json({ message: 'Conta administrativa configurada.' });
+  } catch (e) {
+    console.error('Erro ao configurar conta administrativa:', e?.message || e);
+    res.status(500).json({ message: 'Não foi possível configurar a conta.' });
+  }
+});
+
 app.post('/api/auth/register', rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false }), (req, res) => {
   const nome = typeof req.body?.nome === 'string' ? req.body.nome.trim() : '';
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
